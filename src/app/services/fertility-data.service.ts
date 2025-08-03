@@ -45,6 +45,9 @@ export class FertilityDataService {
     record.id = this.generateId();
     dayRecord.records.push(record);
 
+    // Calculate frequency automatically for all records of the day
+    this.calculateFrequencyForDay(dayRecord);
+
     this.updateDayRecord(dayRecord);
     this.updatePeakDayCalculations(records);
 
@@ -52,6 +55,26 @@ export class FertilityDataService {
 
     this.recordsSubject.next(records);
     this.saveRecords(records);
+  }
+
+  private calculateFrequencyForDay(dayRecord: DayRecord): void {
+    const recordCount = dayRecord.records.length;
+    let frequency: FrequencyType;
+
+    if (recordCount > 3) {
+      frequency = FrequencyType.ALL_DAY;
+    } else if (recordCount === 3) {
+      frequency = FrequencyType.THREE;
+    } else if (recordCount === 2) {
+      frequency = FrequencyType.TWICE;
+    } else {
+      frequency = FrequencyType.ONCE;
+    }
+
+    // Update frequency for all records in the day
+    dayRecord.records.forEach(record => {
+      record.mucusCharacteristics.frequency = frequency;
+    });
   }
 
   getRecordsByDate(date: string): FertilityRecord[] {
@@ -71,6 +94,8 @@ export class FertilityDataService {
           const dayIndex = records.indexOf(dayRecord);
           records.splice(dayIndex, 1);
         } else {
+          // Recalculate frequency after deletion
+          this.calculateFrequencyForDay(dayRecord);
           this.updateDayRecord(dayRecord);
         }
         break;

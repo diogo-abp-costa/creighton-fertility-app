@@ -13,6 +13,20 @@ import {
 import { FertilityDataService } from '../../services/fertility-data.service';
 import { NotificationService } from '../../services/notification.service';
 
+// New simplified mucus types for the form
+export enum SimplifiedMucusType {
+  DRY = 'dry',
+  MOIST_NO_LUBRICATION = 'moist-no-lubrication',
+  WET_NO_LUBRICATION = 'wet-no-lubrication',
+  SLIPPERY_NO_LUBRICATION = 'slippery-no-lubrication',
+  LOW_STRETCH = 'low-stretch',
+  MEDIUM_STRETCH = 'medium-stretch',
+  HIGH_STRETCH = 'high-stretch',
+  MOIST_WITH_LUBRICATION = 'moist-with-lubrication',
+  SLIPPERY_WITH_LUBRICATION = 'slippery-with-lubrication',
+  WET_WITH_LUBRICATION = 'wet-with-lubrication'
+}
+
 @Component({
   selector: 'app-record-form',
   templateUrl: './record-form.component.html',
@@ -21,14 +35,11 @@ import { NotificationService } from '../../services/notification.service';
 export class RecordFormComponent {
   recordForm: FormGroup;
 
-  // Enum references for template
-  mucusTypes = Object.values(MucusType);
+  // Simplified enum references for template
+  mucusTypes = Object.values(SimplifiedMucusType);
   mucusColors = Object.values(MucusColor);
   mucusConsistencies = Object.values(MucusConsistency);
-  sensationTypes = Object.values(SensationType);
-  bleedingTypes = Object.values(BleedingType);
-  stretchabilityTypes = Object.values(StretchabilityType);
-  frequencyTypes = Object.values(FrequencyType);
+  bleedingTypes = Object.values(BleedingType).filter(type => type !== BleedingType.VERY_HEAVY);
 
   constructor(
       private fb: FormBuilder,
@@ -45,37 +56,70 @@ export class RecordFormComponent {
     return this.fb.group({
       date: [today, Validators.required],
       time: [now, Validators.required],
-      mucusType: [MucusType.DRY, Validators.required],
+      bleeding: [BleedingType.NONE, Validators.required],
+      mucusType: [SimplifiedMucusType.DRY, Validators.required],
       mucusColor: [MucusColor.CLEAR, Validators.required],
       mucusConsistency: [MucusConsistency.NOTHING, Validators.required],
-      sensation: [SensationType.DRY, Validators.required],
-      stretchability: [StretchabilityType.NONE, Validators.required],
-      frequency: [FrequencyType.ALL_DAY, Validators.required],
-      lubrication: [false],
-      bleeding: [BleedingType.NONE, Validators.required],
+      sexualContact: [false],
       notes: ['']
     });
+  }
+
+  onMucusTypeChange(): void {
+    // Reset color and consistency when mucus type changes
+    this.recordForm.patchValue({
+      mucusColor: MucusColor.CLEAR,
+      mucusConsistency: MucusConsistency.NOTHING
+    });
+  }
+
+  showMucusColor(): boolean {
+    const mucusType = this.recordForm.get('mucusType')?.value;
+    return this.isStretchabilityType(mucusType);
+  }
+
+  showMucusConsistency(): boolean {
+    const mucusType = this.recordForm.get('mucusType')?.value;
+    return this.isStretchabilityType(mucusType);
+  }
+
+  private isStretchabilityType(mucusType: string): boolean {
+    return mucusType === SimplifiedMucusType.LOW_STRETCH ||
+        mucusType === SimplifiedMucusType.MEDIUM_STRETCH ||
+        mucusType === SimplifiedMucusType.HIGH_STRETCH;
   }
 
   onSubmit(): void {
     if (this.recordForm.valid) {
       const formValue = this.recordForm.value;
 
+      // Convert simplified mucus type to original format
+      const convertedMucusData = this.convertSimplifiedMucusType(formValue.mucusType);
+
+      // Calculate frequency automatically - this will be done by the service
+      const frequency = FrequencyType.ONCE; // Default, will be recalculated by service
+
+      // Handle sexual contact note
+      let notes = formValue.notes || '';
+      if (formValue.sexualContact) {
+        notes = notes ? `I - ${notes}` : 'I';
+      }
+
       const record: FertilityRecord = {
         id: '',
         date: formValue.date,
         time: formValue.time,
         mucusCharacteristics: {
-          type: formValue.mucusType,
-          color: formValue.mucusColor,
-          consistency: formValue.mucusConsistency,
-          sensation: formValue.sensation,
-          stretchability: formValue.stretchability,
-          frequency: formValue.frequency,
-          lubrication: formValue.lubrication
+          type: convertedMucusData.type,
+          color: this.showMucusColor() ? formValue.mucusColor : MucusColor.CLEAR,
+          consistency: this.showMucusConsistency() ? formValue.mucusConsistency : MucusConsistency.NOTHING,
+          sensation: convertedMucusData.sensation,
+          stretchability: convertedMucusData.stretchability,
+          frequency: frequency,
+          lubrication: convertedMucusData.lubrication
         },
         bleeding: formValue.bleeding,
-        notes: formValue.notes || undefined
+        notes: notes || undefined
       };
 
       try {
@@ -111,14 +155,115 @@ export class RecordFormComponent {
     }
   }
 
+  private convertSimplifiedMucusType(simplifiedType: SimplifiedMucusType): {
+    type: MucusType;
+    sensation: SensationType;
+    stretchability: StretchabilityType;
+    lubrication: boolean;
+  } {
+    switch (simplifiedType) {
+      case SimplifiedMucusType.DRY:
+        return {
+          type: MucusType.DRY,
+          sensation: SensationType.DRY,
+          stretchability: StretchabilityType.NONE,
+          lubrication: false
+        };
+
+      case SimplifiedMucusType.MOIST_NO_LUBRICATION:
+        return {
+          type: MucusType.STICKY,
+          sensation: SensationType.MOIST,
+          stretchability: StretchabilityType.NONE,
+          lubrication: false
+        };
+
+      case SimplifiedMucusType.WET_NO_LUBRICATION:
+        return {
+          type: MucusType.STICKY,
+          sensation: SensationType.WET,
+          stretchability: StretchabilityType.NONE,
+          lubrication: false
+        };
+
+      case SimplifiedMucusType.SLIPPERY_NO_LUBRICATION:
+        return {
+          type: MucusType.CREAMY,
+          sensation: SensationType.SLIPPERY,
+          stretchability: StretchabilityType.NONE,
+          lubrication: false
+        };
+
+      case SimplifiedMucusType.LOW_STRETCH:
+        return {
+          type: MucusType.CREAMY,
+          sensation: SensationType.MOIST,
+          stretchability: StretchabilityType.LOW,
+          lubrication: false
+        };
+
+      case SimplifiedMucusType.MEDIUM_STRETCH:
+        return {
+          type: MucusType.CREAMY,
+          sensation: SensationType.WET,
+          stretchability: StretchabilityType.MEDIUM,
+          lubrication: false
+        };
+
+      case SimplifiedMucusType.HIGH_STRETCH:
+        return {
+          type: MucusType.EGG_WHITE,
+          sensation: SensationType.SLIPPERY,
+          stretchability: StretchabilityType.HIGH,
+          lubrication: false
+        };
+
+      case SimplifiedMucusType.MOIST_WITH_LUBRICATION:
+        return {
+          type: MucusType.STICKY,
+          sensation: SensationType.MOIST,
+          stretchability: StretchabilityType.NONE,
+          lubrication: true
+        };
+
+      case SimplifiedMucusType.SLIPPERY_WITH_LUBRICATION:
+        return {
+          type: MucusType.CREAMY,
+          sensation: SensationType.SLIPPERY,
+          stretchability: StretchabilityType.NONE,
+          lubrication: true
+        };
+
+      case SimplifiedMucusType.WET_WITH_LUBRICATION:
+        return {
+          type: MucusType.STICKY,
+          sensation: SensationType.WET,
+          stretchability: StretchabilityType.NONE,
+          lubrication: true
+        };
+
+      default:
+        return {
+          type: MucusType.DRY,
+          sensation: SensationType.DRY,
+          stretchability: StretchabilityType.NONE,
+          lubrication: false
+        };
+    }
+  }
+
   formatMucusType(value: string): string {
     const translations: { [key: string]: string } = {
       'dry': 'Seco',
-      'nothing': 'Nada',
-      'tacky': 'Pegajoso',
-      'sticky': 'Aderente',
-      'creamy': 'Cremoso',
-      'eggwhite': 'Clara de Ovo'
+      'moist-no-lubrication': 'Húmido sem lubrificação',
+      'wet-no-lubrication': 'Molhado sem lubrificação',
+      'slippery-no-lubrication': 'Brilhante sem lubrificação',
+      'low-stretch': 'Elasticidade pequena (<0,5 cm)',
+      'medium-stretch': 'Elasticidade média (1-2cm)',
+      'high-stretch': 'Elasticidade alta (>2,5cm)',
+      'moist-with-lubrication': 'Húmido com lubrificação',
+      'slippery-with-lubrication': 'Brilhante com lubrificação',
+      'wet-with-lubrication': 'Molhado com lubrificação'
     };
     return translations[value] || value;
   }
@@ -127,8 +272,8 @@ export class RecordFormComponent {
     const translations: { [key: string]: string } = {
       'clear': 'Transparente',
       'white': 'Branco',
-      'cloudy-clear': 'Opaco/Transparente',
-      'cloudy-white': 'Opaco/Branco',
+      'cloudy-clear': 'Transparente',
+      'cloudy-white': 'Branco',
       'yellow': 'Amarelo',
       'brown': 'Castanho'
     };
@@ -137,30 +282,10 @@ export class RecordFormComponent {
 
   formatMucusConsistency(value: string): string {
     const translations: { [key: string]: string } = {
-      'nothing': 'Nenhuma',
+      'nothing': 'Lubrificação',
       'pasty': 'Pastoso',
       'gummy': 'Goma',
-      'stretchy': 'Elástico'
-    };
-    return translations[value] || value;
-  }
-
-  formatSensation(value: string): string {
-    const translations: { [key: string]: string } = {
-      'dry': 'Seco',
-      'moist': 'Húmido',
-      'wet': 'Molhado',
-      'slippery': 'Brilhante/Escorregadio'
-    };
-    return translations[value] || value;
-  }
-
-  formatStretchability(value: string): string {
-    const translations: { [key: string]: string } = {
-      'none': 'Nenhuma (2-4)',
-      'low': 'Pequena (6)',
-      'medium': 'Média (8)',
-      'high': 'Alta (10)'
+      'stretchy': 'Opaco'
     };
     return translations[value] || value;
   }
@@ -177,12 +302,12 @@ export class RecordFormComponent {
 
   formatBleeding(value: string): string {
     const translations: { [key: string]: string } = {
-      'none': 'Sem hemorragia',
-      'very-light': 'Muito ligeira (VL)',
-      'light': 'Ligeira (L)',
-      'moderate': 'Moderada (M)',
-      'heavy': 'Abundante (H)',
-      'brown': 'Castanho/Preto (B)'
+      'none': 'Nenhum',
+      'very-light': 'Muito ligeiro',
+      'light': 'Ligeiro',
+      'moderate': 'Moderado',
+      'heavy': 'Abundante',
+      'brown': 'Castanho/Preto'
     };
     return translations[value] || value;
   }

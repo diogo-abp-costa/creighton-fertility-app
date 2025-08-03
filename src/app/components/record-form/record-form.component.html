@@ -23,15 +23,24 @@
     </div>
 
     <div class="form-group">
+      <label for="bleeding">Fluxo Menstrual:</label>
+      <select id="bleeding" formControlName="bleeding" required>
+        <option *ngFor="let bleeding of bleedingTypes" [value]="bleeding">
+          {{ formatBleeding(bleeding) }}
+        </option>
+      </select>
+    </div>
+
+    <div class="form-group">
       <label for="mucusType">Tipo de Muco:</label>
-      <select id="mucusType" formControlName="mucusType" required>
+      <select id="mucusType" formControlName="mucusType" required (change)="onMucusTypeChange()">
         <option *ngFor="let type of mucusTypes" [value]="type">
           {{ formatMucusType(type) }}
         </option>
       </select>
     </div>
 
-    <div class="form-group">
+    <div class="form-group" *ngIf="showMucusColor()">
       <label for="mucusColor">Cor do Muco:</label>
       <select id="mucusColor" formControlName="mucusColor" required>
         <option *ngFor="let color of mucusColors" [value]="color">
@@ -40,7 +49,7 @@
       </select>
     </div>
 
-    <div class="form-group">
+    <div class="form-group" *ngIf="showMucusConsistency()">
       <label for="mucusConsistency">Consistência do Muco:</label>
       <select id="mucusConsistency" formControlName="mucusConsistency" required>
         <option *ngFor="let consistency of mucusConsistencies" [value]="consistency">
@@ -50,46 +59,10 @@
     </div>
 
     <div class="form-group">
-      <label for="sensation">Sensação:</label>
-      <select id="sensation" formControlName="sensation" required>
-        <option *ngFor="let sensation of sensationTypes" [value]="sensation">
-          {{ formatSensation(sensation) }}
-        </option>
-      </select>
-    </div>
-
-    <div class="form-group">
-      <label for="stretchability">Elasticidade:</label>
-      <select id="stretchability" formControlName="stretchability" required>
-        <option *ngFor="let stretch of stretchabilityTypes" [value]="stretch">
-          {{ formatStretchability(stretch) }}
-        </option>
-      </select>
-    </div>
-
-    <div class="form-group">
-      <label for="frequency">Frequência de Observação:</label>
-      <select id="frequency" formControlName="frequency" required>
-        <option *ngFor="let freq of frequencyTypes" [value]="freq">
-          {{ formatFrequency(freq) }}
-        </option>
-      </select>
-    </div>
-
-    <div class="form-group">
       <label>
-        <input type="checkbox" formControlName="lubrication">
-        Lubrificação presente
+        <input type="checkbox" formControlName="sexualContact">
+        Contacto sexual
       </label>
-    </div>
-
-    <div class="form-group">
-      <label for="bleeding">Hemorragia:</label>
-      <select id="bleeding" formControlName="bleeding" required>
-        <option *ngFor="let bleeding of bleedingTypes" [value]="bleeding">
-          {{ formatBleeding(bleeding) }}
-        </option>
-      </select>
     </div>
 
     <div class="form-group">
