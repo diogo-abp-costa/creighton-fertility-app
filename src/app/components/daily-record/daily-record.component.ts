@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Observable } from 'rxjs';
 import { DayRecord, FertilityRecord, MucusType, BleedingType, SensationType, StretchabilityType, FrequencyType, MucusColor, MucusConsistency } from '../../models/fertility-record.model';
 import { FertilityDataService } from '../../services/fertility-data.service';
+import { NotificationService } from '../../services/notification.service';
 
 @Component({
   selector: 'app-daily-record',
@@ -13,7 +14,10 @@ export class DailyRecordComponent implements OnInit {
   selectedDate: string = '';
   selectedDayRecords: FertilityRecord[] = [];
 
-  constructor(private fertilityService: FertilityDataService) {
+  constructor(
+      private fertilityService: FertilityDataService,
+      private notificationService: NotificationService
+  ) {
     this.records$ = this.fertilityService.records$;
   }
 
@@ -32,8 +36,18 @@ export class DailyRecordComponent implements OnInit {
 
   deleteRecord(recordId: string): void {
     if (confirm('Tem a certeza de que deseja eliminar este registo?')) {
-      this.fertilityService.deleteRecord(recordId);
-      this.loadRecordsForDate();
+      try {
+        this.fertilityService.deleteRecord(recordId);
+        this.loadRecordsForDate();
+
+        // Show success notification
+        this.notificationService.showSuccess('Registo eliminado com sucesso!');
+
+      } catch (error) {
+        // Show error notification if something goes wrong
+        this.notificationService.showError('Erro ao eliminar o registo. Tente novamente.');
+        console.error('Error deleting record:', error);
+      }
     }
   }
 

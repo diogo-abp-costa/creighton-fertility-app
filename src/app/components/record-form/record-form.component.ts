@@ -11,6 +11,7 @@ import {
   FertilityRecord
 } from '../../models/fertility-record.model';
 import { FertilityDataService } from '../../services/fertility-data.service';
+import { NotificationService } from '../../services/notification.service';
 
 @Component({
   selector: 'app-record-form',
@@ -19,7 +20,6 @@ import { FertilityDataService } from '../../services/fertility-data.service';
 })
 export class RecordFormComponent {
   recordForm: FormGroup;
-  showSuccess = false;
 
   // Enum references for template
   mucusTypes = Object.values(MucusType);
@@ -32,7 +32,8 @@ export class RecordFormComponent {
 
   constructor(
       private fb: FormBuilder,
-      private fertilityService: FertilityDataService
+      private fertilityService: FertilityDataService,
+      private notificationService: NotificationService
   ) {
     this.recordForm = this.createForm();
   }
@@ -77,12 +78,36 @@ export class RecordFormComponent {
         notes: formValue.notes || undefined
       };
 
-      this.fertilityService.addRecord(record);
+      try {
+        this.fertilityService.addRecord(record);
 
-      this.showSuccess = true;
-      setTimeout(() => this.showSuccess = false, 3000);
+        // Show success notification
+        const dateFormatted = new Date(formValue.date).toLocaleDateString('pt-PT');
+        const timeFormatted = new Date(`2000-01-01T${formValue.time}`).toLocaleTimeString('pt-PT', {
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: false
+        });
 
-      this.recordForm = this.createForm();
+        this.notificationService.showSuccess(
+            `Registo adicionado com sucesso para ${dateFormatted} às ${timeFormatted}!`
+        );
+
+        // Reset form
+        this.recordForm = this.createForm();
+
+      } catch (error) {
+        // Show error notification if something goes wrong
+        this.notificationService.showError(
+            'Erro ao guardar o registo. Tente novamente.'
+        );
+        console.error('Error saving record:', error);
+      }
+    } else {
+      // Show warning if form is invalid
+      this.notificationService.showWarning(
+          'Por favor, preencha todos os campos obrigatórios.'
+      );
     }
   }
 

@@ -1,10 +1,6 @@
 <div class="card">
   <h2>Adicionar Novo Registo</h2>
 
-  <div *ngIf="showSuccess" class="alert alert-success">
-    Registo guardado com sucesso!
-  </div>
-
   <form [formGroup]="recordForm" (ngSubmit)="onSubmit()">
     <div class="form-row">
       <div class="form-group">
