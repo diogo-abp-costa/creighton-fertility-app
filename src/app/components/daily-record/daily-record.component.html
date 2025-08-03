@@ -1,0 +1,54 @@
+<div class="card">
+  <h2>Daily Records</h2>
+  
+  <div class="date-selector">
+    <label for="selectedDate">Select Date:</label>
+    <input 
+      type="date" 
+      id="selectedDate" 
+      [(ngModel)]="selectedDate"
+      (change)="onDateChange()"
+      class="date-input">
+  </div>
+  
+  <div *ngIf="selectedDayRecords.length === 0" class="no-records">
+    <p>No records found for {{ selectedDate | date:'fullDate' }}</p>
+  </div>
+  
+  <div *ngIf="selectedDayRecords.length > 0" class="records-container">
+    <h3>Records for {{ selectedDate | date:'fullDate' }}</h3>
+    <p class="record-count">{{ selectedDayRecords.length }} record(s) found</p>
+    
+    <div class="records-list">
+      <div *ngFor="let record of selectedDayRecords; trackBy: trackByRecordId" 
+           class="record-card">
+        <div class="record-header">
+          <span class="record-time">{{ formatTime(record.time) }}</span>
+          <button 
+            class="btn btn-danger btn-sm" 
+            (click)="deleteRecord(record.id)"
+            title="Delete record">
+            ×
+          </button>
+        </div>
+        
+        <div class="record-details">
+          <div class="detail-group">
+            <label>Mucus Characteristics:</label>
+            <span>{{ getMucusDescription(record) }}</span>
+          </div>
+          
+          <div class="detail-group">
+            <label>Bleeding:</label>
+            <span>{{ getBleedingDescription(record) }}</span>
+          </div>
+          
+          <div *ngIf="record.notes" class="detail-group">
+            <label>Notes:</label>
+            <span>{{ record.notes }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

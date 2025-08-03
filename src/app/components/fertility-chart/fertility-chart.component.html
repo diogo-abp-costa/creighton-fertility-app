@@ -1,0 +1,62 @@
+<div class="card">
+  <div class="chart-header">
+    <button class="btn btn-secondary" (click)="previousMonth()">‹ Previous</button>
+    <h2>{{ getMonthName() }}</h2>
+    <button class="btn btn-secondary" (click)="nextMonth()">Next ›</button>
+  </div>
+  
+  <div class="chart-container" *ngIf="records$ | async as records">
+    <div class="chart-legend">
+      <div class="legend-item">
+        <span class="legend-color" style="background-color: #28a745;"></span>
+        <span>Infertile (Green)</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-color" style="background-color: #ffc107;"></span>
+        <span>Possibly Fertile (Yellow)</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-color" style="background-color: #dc3545;"></span>
+        <span>Fertile (Red)</span>
+      </div>
+      <div class="legend-item">
+        <span class="baby-symbol">👶</span>
+        <span>Baby symbol indicates infertile days</span>
+      </div>
+    </div>
+    
+    <div class="calendar-grid">
+      <div class="calendar-header">
+        <div class="day-header">Date</div>
+        <div class="day-header">Symbol</div>
+        <div class="day-header">Color</div>
+        <div class="day-header">Notes</div>
+      </div>
+      
+      <div *ngFor="let day of generateCalendarDays()" class="calendar-row">
+        <div class="date-cell">
+          {{ formatDate(day) }}
+        </div>
+        
+        <ng-container *ngIf="getRecordForDate(getCurrentMonthRecords(records), day) as dayRecord; else emptyDay">
+          <div class="symbol-cell" [style.background-color]="dayRecord.chartColor">
+            {{ dayRecord.chartSymbol }}
+            <span *ngIf="dayRecord.baby" class="baby-symbol">👶</span>
+          </div>
+          <div class="color-cell">
+            <span class="color-indicator" [style.background-color]="dayRecord.chartColor"></span>
+          </div>
+          <div class="notes-cell">
+            {{ dayRecord.selectedRecord?.notes || '' }}
+          </div>
+        </ng-container>
+        
+        <ng-template #emptyDay>
+          <div class="symbol-cell empty">-</div>
+          <div class="color-cell">-</div>
+          <div class="notes-cell">-</div>
+        </ng-template>
+      </div>
+    </div>
+  </div>
+</div>

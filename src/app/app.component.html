@@ -1,0 +1,34 @@
+<div class="container">
+  <header class="card">
+    <h1>{{ title }}</h1>
+    <nav class="nav-tabs">
+      <button 
+        class="btn"
+        [class.btn-primary]="activeTab === 'record'"
+        [class.btn-secondary]="activeTab !== 'record'"
+        (click)="setActiveTab('record')">
+        New Record
+      </button>
+      <button 
+        class="btn"
+        [class.btn-primary]="activeTab === 'chart'"
+        [class.btn-secondary]="activeTab !== 'chart'"
+        (click)="setActiveTab('chart')">
+        Fertility Chart
+      </button>
+      <button 
+        class="btn"
+        [class.btn-primary]="activeTab === 'daily'"
+        [class.btn-secondary]="activeTab !== 'daily'"
+        (click)="setActiveTab('daily')">
+        Daily Records
+      </button>
+    </nav>
+  </header>
+
+  <main>
+    <app-record-form *ngIf="activeTab === 'record'"></app-record-form>
+    <app-fertility-chart *ngIf="activeTab === 'chart'"></app-fertility-chart>
+    <app-daily-record *ngIf="activeTab === 'daily'"></app-daily-record>
+  </main>
+</div>
