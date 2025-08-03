@@ -6,7 +6,7 @@ import { Component } from '@angular/core';
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent {
-  title = 'Creighton Model Fertility Care';
+  title = 'Método Creighton - Cuidados de Fertilidade';
   activeTab = 'record';
 
   setActiveTab(tab: string) {

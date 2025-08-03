@@ -1,19 +1,135 @@
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 15px;
-  
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-  }
-}
-
 h2 {
   color: #2c3e50;
   margin-bottom: 20px;
 }
 
-.btn[disabled] {
-  opacity: 0.6;
-  cursor: not-allowed;
+.date-selector {
+  margin-bottom: 30px;
+
+  label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+
+  .date-input {
+    max-width: 200px;
+  }
+}
+
+.no-records {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6c757d;
+
+  p {
+    font-size: 18px;
+  }
+}
+
+.records-container {
+  h3 {
+    color: #2c3e50;
+    margin-bottom: 10px;
+  }
+
+  .record-count {
+    color: #6c757d;
+    margin-bottom: 20px;
+    font-style: italic;
+  }
+}
+
+.records-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.record-card {
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 20px;
+  background-color: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+
+  .record-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+
+    .record-time {
+      font-weight: 600;
+      font-size: 16px;
+      color: #2c3e50;
+    }
+
+    .btn-sm {
+      padding: 4px 8px;
+      font-size: 16px;
+      line-height: 1;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+    }
+
+    .btn-danger {
+      background-color: #dc3545;
+      border-color: #dc3545;
+      color: white;
+
+      &:hover {
+        background-color: #c82333;
+        border-color: #bd2130;
+      }
+    }
+  }
+
+  .record-details {
+    .detail-group {
+      margin-bottom: 12px;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      label {
+        display: inline-block;
+        font-weight: 600;
+        margin-right: 10px;
+        min-width: 180px;
+        color: #495057;
+      }
+
+      span {
+        color: #212529;
+
+        &.creighton-symbols {
+          font-family: 'Courier New', monospace;
+          font-weight: bold;
+          color: #007bff;
+          background-color: #f8f9fa;
+          padding: 2px 6px;
+          border-radius: 3px;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .record-card {
+    .record-details {
+      .detail-group {
+        label {
+          display: block;
+          min-width: auto;
+          margin-bottom: 4px;
+        }
+      }
+    }
+  }
 }

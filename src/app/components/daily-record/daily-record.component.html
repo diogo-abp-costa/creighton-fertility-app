@@ -1,51 +1,56 @@
 <div class="card">
-  <h2>Daily Records</h2>
-  
+  <h2>Registos Diários</h2>
+
   <div class="date-selector">
-    <label for="selectedDate">Select Date:</label>
-    <input 
-      type="date" 
-      id="selectedDate" 
-      [(ngModel)]="selectedDate"
-      (change)="onDateChange()"
-      class="date-input">
+    <label for="selectedDate">Seleccionar Data:</label>
+    <input
+        type="date"
+        id="selectedDate"
+        [(ngModel)]="selectedDate"
+        (change)="onDateChange()"
+        class="date-input">
   </div>
-  
+
   <div *ngIf="selectedDayRecords.length === 0" class="no-records">
-    <p>No records found for {{ selectedDate | date:'fullDate' }}</p>
+    <p>Não foram encontrados registos para {{ selectedDate | date:'fullDate':'pt-PT' }}</p>
   </div>
-  
+
   <div *ngIf="selectedDayRecords.length > 0" class="records-container">
-    <h3>Records for {{ selectedDate | date:'fullDate' }}</h3>
-    <p class="record-count">{{ selectedDayRecords.length }} record(s) found</p>
-    
+    <h3>Registos para {{ selectedDate | date:'fullDate':'pt-PT' }}</h3>
+    <p class="record-count">{{ selectedDayRecords.length }} registo(s) encontrado(s)</p>
+
     <div class="records-list">
-      <div *ngFor="let record of selectedDayRecords; trackBy: trackByRecordId" 
+      <div *ngFor="let record of selectedDayRecords; trackBy: trackByRecordId"
            class="record-card">
         <div class="record-header">
           <span class="record-time">{{ formatTime(record.time) }}</span>
-          <button 
-            class="btn btn-danger btn-sm" 
-            (click)="deleteRecord(record.id)"
-            title="Delete record">
+          <button
+              class="btn btn-danger btn-sm"
+              (click)="deleteRecord(record.id)"
+              title="Eliminar registo">
             ×
           </button>
         </div>
-        
+
         <div class="record-details">
           <div class="detail-group">
-            <label>Mucus Characteristics:</label>
+            <label>Características do Muco:</label>
             <span>{{ getMucusDescription(record) }}</span>
           </div>
-          
+
           <div class="detail-group">
-            <label>Bleeding:</label>
+            <label>Hemorragia:</label>
             <span>{{ getBleedingDescription(record) }}</span>
           </div>
-          
+
+          <div class="detail-group">
+            <label>Símbolos Creighton:</label>
+            <span class="creighton-symbols">{{ getCreightonSymbols(record) }}</span>
+          </div>
+
           <div *ngIf="record.notes" class="detail-group">
-            <label>Notes:</label>
-            <span>{{ record.notes }}</span>
+            <label>Notas:</label>
+            <span>{{ getOriginalNotes(record) }}</span>
           </div>
         </div>
       </div>

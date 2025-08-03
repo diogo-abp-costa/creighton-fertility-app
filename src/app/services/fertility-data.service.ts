@@ -1,11 +1,15 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { 
-  FertilityRecord, 
-  DayRecord, 
-  MucusType, 
-  SensationType, 
-  BleedingType 
+import {
+  FertilityRecord,
+  DayRecord,
+  MucusType,
+  SensationType,
+  BleedingType,
+  StretchabilityType,
+  FrequencyType,
+  MucusColor,
+  MucusConsistency
 } from '../models/fertility-record.model';
 
 @Injectable({
@@ -14,7 +18,7 @@ import {
 export class FertilityDataService {
   private readonly storageKey = 'fertility-records';
   private recordsSubject = new BehaviorSubject<DayRecord[]>([]);
-  
+
   records$ = this.recordsSubject.asObservable();
 
   constructor() {
@@ -24,9 +28,9 @@ export class FertilityDataService {
   addRecord(record: FertilityRecord): void {
     const records = this.recordsSubject.value;
     const dateKey = record.date;
-    
+
     let dayRecord = records.find(r => r.date === dateKey);
-    
+
     if (!dayRecord) {
       dayRecord = {
         date: dateKey,
@@ -37,17 +41,15 @@ export class FertilityDataService {
       };
       records.push(dayRecord);
     }
-    
-    // Add the new record
+
     record.id = this.generateId();
     dayRecord.records.push(record);
-    
-    // Determine the most significant record for the day
+
     this.updateDayRecord(dayRecord);
-    
-    // Sort records by date
+    this.updatePeakDayCalculations(records);
+
     records.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    
+
     this.recordsSubject.next(records);
     this.saveRecords(records);
   }
@@ -59,12 +61,12 @@ export class FertilityDataService {
 
   deleteRecord(recordId: string): void {
     const records = this.recordsSubject.value;
-    
+
     for (const dayRecord of records) {
       const index = dayRecord.records.findIndex(r => r.id === recordId);
       if (index !== -1) {
         dayRecord.records.splice(index, 1);
-        
+
         if (dayRecord.records.length === 0) {
           const dayIndex = records.indexOf(dayRecord);
           records.splice(dayIndex, 1);
@@ -74,27 +76,213 @@ export class FertilityDataService {
         break;
       }
     }
-    
+
+    this.updatePeakDayCalculations(records);
     this.recordsSubject.next(records);
     this.saveRecords(records);
   }
 
   private updateDayRecord(dayRecord: DayRecord): void {
     if (dayRecord.records.length === 0) return;
-    
-    // Find the most significant record (highest fertility indicator)
+
     const mostSignificant = this.getMostSignificantRecord(dayRecord.records);
     dayRecord.selectedRecord = mostSignificant;
-    
-    // Set chart symbol and color based on the most significant record
+
     const chartInfo = this.getChartInfo(mostSignificant);
     dayRecord.chartSymbol = chartInfo.symbol;
     dayRecord.chartColor = chartInfo.color;
     dayRecord.baby = chartInfo.baby;
+
+    // Generate automatic notes based on Creighton symbols
+    const automaticNotes = this.generateCreightonSymbols(mostSignificant);
+    if (automaticNotes) {
+      dayRecord.selectedRecord.notes = automaticNotes + (mostSignificant.notes ? ' - ' + mostSignificant.notes : '');
+    }
+  }
+
+  private updatePeakDayCalculations(records: DayRecord[]): void {
+    // Reset all peak day markers
+    records.forEach(record => {
+      record.peakDay = false;
+      record.postPeakDay = undefined;
+    });
+
+    // Find peak days and mark post-peak days
+    const sortedRecords = records.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    for (let i = 0; i < sortedRecords.length; i++) {
+      const current = sortedRecords[i];
+      if (this.isPeakDay(current, sortedRecords, i)) {
+        current.peakDay = true;
+
+        // Mark next 3 days as post-peak fertile days
+        for (let j = 1; j <= 3 && i + j < sortedRecords.length; j++) {
+          const postPeakRecord = sortedRecords[i + j];
+          postPeakRecord.postPeakDay = j;
+
+          // Update color for post-peak days (Green with baby for dry days)
+          if (postPeakRecord.selectedRecord &&
+              (postPeakRecord.selectedRecord.mucusCharacteristics.type === MucusType.DRY ||
+                  postPeakRecord.selectedRecord.mucusCharacteristics.type === MucusType.NOTHING)) {
+            postPeakRecord.chartColor = '#28a745'; // Green
+            postPeakRecord.baby = true;
+          }
+        }
+      }
+    }
+  }
+
+  private isPeakDay(dayRecord: DayRecord, allRecords: DayRecord[], index: number): boolean {
+    if (!dayRecord.selectedRecord) return false;
+
+    const record = dayRecord.selectedRecord;
+    const mucusType = record.mucusCharacteristics.type;
+
+    // Peak day criteria: last day of most fertile mucus before change to less fertile
+    if (mucusType === MucusType.EGG_WHITE ||
+        (mucusType === MucusType.CREAMY && record.mucusCharacteristics.sensation === SensationType.SLIPPERY)) {
+
+      // Check if next day is less fertile
+      if (index + 1 < allRecords.length) {
+        const nextDay = allRecords[index + 1];
+        if (nextDay.selectedRecord) {
+          const nextMucusType = nextDay.selectedRecord.mucusCharacteristics.type;
+          if (nextMucusType === MucusType.DRY || nextMucusType === MucusType.NOTHING ||
+              nextMucusType === MucusType.TACKY || nextMucusType === MucusType.STICKY) {
+            return true;
+          }
+        }
+      }
+    }
+
+    return false;
+  }
+
+  private generateCreightonSymbols(record: FertilityRecord): string {
+    const symbols: string[] = [];
+
+    // Bleeding symbols
+    if (record.bleeding !== BleedingType.NONE) {
+      switch (record.bleeding) {
+        case BleedingType.VERY_LIGHT:
+          symbols.push('VL');
+          break;
+        case BleedingType.LIGHT:
+          symbols.push('L');
+          break;
+        case BleedingType.MODERATE:
+          symbols.push('M');
+          break;
+        case BleedingType.HEAVY:
+          symbols.push('H');
+          break;
+        case BleedingType.BROWN:
+          symbols.push('B');
+          break;
+      }
+    } else {
+      // Mucus symbols
+      const mucus = record.mucusCharacteristics;
+
+      if (mucus.type === MucusType.DRY) {
+        symbols.push('0');
+      } else if (mucus.type === MucusType.NOTHING) {
+        symbols.push('0');
+      } else {
+        // Stretchability numbers
+        let baseSymbol = '';
+        switch (mucus.stretchability) {
+          case StretchabilityType.NONE:
+            if (mucus.sensation === SensationType.MOIST) {
+              baseSymbol = mucus.lubrication ? '2' : '2';
+            } else if (mucus.sensation === SensationType.WET) {
+              baseSymbol = mucus.lubrication ? '2W' : '2W';
+            } else if (mucus.sensation === SensationType.SLIPPERY) {
+              baseSymbol = '4';
+            }
+            break;
+          case StretchabilityType.LOW:
+            baseSymbol = '6';
+            break;
+          case StretchabilityType.MEDIUM:
+            baseSymbol = '8';
+            break;
+          case StretchabilityType.HIGH:
+            baseSymbol = '10';
+            break;
+        }
+
+        // Add color/consistency modifiers
+        let modifiers = '';
+        if (mucus.stretchability !== StretchabilityType.NONE) {
+          switch (mucus.color) {
+            case MucusColor.BROWN:
+              modifiers += 'B';
+              break;
+            case MucusColor.WHITE:
+            case MucusColor.CLOUDY_WHITE:
+              modifiers += 'C';
+              break;
+            case MucusColor.CLEAR:
+              modifiers += 'K';
+              break;
+            case MucusColor.CLOUDY_CLEAR:
+              modifiers += 'C/K';
+              break;
+            case MucusColor.YELLOW:
+              modifiers += 'Y';
+              break;
+          }
+
+          switch (mucus.consistency) {
+            case MucusConsistency.GUMMY:
+              modifiers += 'G';
+              break;
+            case MucusConsistency.PASTY:
+              modifiers += 'P';
+              break;
+          }
+
+          if (mucus.lubrication) {
+            modifiers += 'L';
+          }
+        }
+
+        // Special cases for lubrication with high stretchability
+        if (mucus.stretchability === StretchabilityType.HIGH && mucus.lubrication) {
+          if (mucus.sensation === SensationType.MOIST) {
+            baseSymbol = '10DL';
+          } else if (mucus.sensation === SensationType.SLIPPERY) {
+            baseSymbol = '10SL';
+          } else if (mucus.sensation === SensationType.WET) {
+            baseSymbol = '10WL';
+          }
+        }
+
+        symbols.push(baseSymbol + modifiers);
+      }
+    }
+
+    // Add frequency
+    switch (record.mucusCharacteristics.frequency) {
+      case FrequencyType.ONCE:
+        symbols.push('X1');
+        break;
+      case FrequencyType.TWICE:
+        symbols.push('X2');
+        break;
+      case FrequencyType.THREE:
+        symbols.push('X3');
+        break;
+      case FrequencyType.ALL_DAY:
+        symbols.push('AD');
+        break;
+    }
+
+    return symbols.join(' ');
   }
 
   private getMostSignificantRecord(records: FertilityRecord[]): FertilityRecord {
-    // Priority order for mucus types (higher index = more significant)
     const mucusPriority = [
       MucusType.DRY,
       MucusType.NOTHING,
@@ -103,83 +291,72 @@ export class FertilityDataService {
       MucusType.CREAMY,
       MucusType.EGG_WHITE
     ];
-    
-    // Priority order for sensations
+
     const sensationPriority = [
       SensationType.DRY,
       SensationType.MOIST,
       SensationType.WET,
       SensationType.SLIPPERY
     ];
-    
+
     return records.reduce((most, current) => {
-      // If current has bleeding and most doesn't, current wins
       if (current.bleeding !== BleedingType.NONE && most.bleeding === BleedingType.NONE) {
         return current;
       }
-      
-      // If most has bleeding and current doesn't, most wins
+
       if (most.bleeding !== BleedingType.NONE && current.bleeding === BleedingType.NONE) {
         return most;
       }
-      
-      // Compare mucus types
+
       const currentMucusIndex = mucusPriority.indexOf(current.mucusCharacteristics.type);
       const mostMucusIndex = mucusPriority.indexOf(most.mucusCharacteristics.type);
-      
+
       if (currentMucusIndex > mostMucusIndex) {
         return current;
       } else if (currentMucusIndex < mostMucusIndex) {
         return most;
       }
-      
-      // If mucus types are equal, compare sensations
+
       const currentSensationIndex = sensationPriority.indexOf(current.mucusCharacteristics.sensation);
       const mostSensationIndex = sensationPriority.indexOf(most.mucusCharacteristics.sensation);
-      
+
       if (currentSensationIndex > mostSensationIndex) {
         return current;
       }
-      
+
       return most;
     });
   }
 
   private getChartInfo(record: FertilityRecord): { symbol: string; color: string; baby: boolean } {
-    // Handle bleeding first
+    // Handle bleeding
     if (record.bleeding !== BleedingType.NONE) {
       return {
         symbol: this.getBleedingSymbol(record.bleeding),
-        color: '#dc3545', // Red for bleeding
+        color: '#dc3545', // Red
         baby: false
       };
     }
-    
+
     // Handle mucus characteristics
     switch (record.mucusCharacteristics.type) {
       case MucusType.DRY:
-        return { symbol: 'D', color: '#28a745', baby: true }; // Green
-      
       case MucusType.NOTHING:
-        return { symbol: '∅', color: '#28a745', baby: true }; // Green
-      
+        return { symbol: '0', color: '#28a745', baby: true }; // Green with baby
+
       case MucusType.TACKY:
-        return { symbol: 'T', color: '#ffc107', baby: false }; // Yellow
-      
       case MucusType.STICKY:
-        return { symbol: 'S', color: '#ffc107', baby: false }; // Yellow
-      
       case MucusType.CREAMY:
         if (record.mucusCharacteristics.sensation === SensationType.SLIPPERY) {
-          return { symbol: 'C/L', color: '#dc3545', baby: false }; // Red
+          return { symbol: 'L', color: '#dc3545', baby: false }; // Red
         }
-        return { symbol: 'C', color: '#ffc107', baby: false }; // Yellow
-      
+        return { symbol: 'M', color: '#ffffff', baby: true }; // White with baby
+
       case MucusType.EGG_WHITE:
         return { symbol: 'L', color: '#dc3545', baby: false }; // Red
-      
+
       default:
-        return { symbol: '?', color: '#6c757d', baby: true }; // Gray
+        return { symbol: '?', color: '#6c757d', baby: true };
     }
   }
 
@@ -189,7 +366,7 @@ export class FertilityDataService {
       case BleedingType.LIGHT: return 'L';
       case BleedingType.MODERATE: return 'M';
       case BleedingType.HEAVY: return 'H';
-      case BleedingType.VERY_HEAVY: return 'VH';
+      case BleedingType.BROWN: return 'B';
       default: return '';
     }
   }

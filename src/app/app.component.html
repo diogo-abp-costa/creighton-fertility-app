@@ -2,26 +2,26 @@
   <header class="card">
     <h1>{{ title }}</h1>
     <nav class="nav-tabs">
-      <button 
-        class="btn"
-        [class.btn-primary]="activeTab === 'record'"
-        [class.btn-secondary]="activeTab !== 'record'"
-        (click)="setActiveTab('record')">
-        New Record
+      <button
+          class="btn"
+          [class.btn-primary]="activeTab === 'record'"
+          [class.btn-secondary]="activeTab !== 'record'"
+          (click)="setActiveTab('record')">
+        Novo Registo
       </button>
-      <button 
-        class="btn"
-        [class.btn-primary]="activeTab === 'chart'"
-        [class.btn-secondary]="activeTab !== 'chart'"
-        (click)="setActiveTab('chart')">
-        Fertility Chart
+      <button
+          class="btn"
+          [class.btn-primary]="activeTab === 'chart'"
+          [class.btn-secondary]="activeTab !== 'chart'"
+          (click)="setActiveTab('chart')">
+        Gráfico de Fertilidade
       </button>
-      <button 
-        class="btn"
-        [class.btn-primary]="activeTab === 'daily'"
-        [class.btn-secondary]="activeTab !== 'daily'"
-        (click)="setActiveTab('daily')">
-        Daily Records
+      <button
+          class="btn"
+          [class.btn-primary]="activeTab === 'daily'"
+          [class.btn-secondary]="activeTab !== 'daily'"
+          (click)="setActiveTab('daily')">
+        Registos Diários
       </button>
     </nav>
   </header>

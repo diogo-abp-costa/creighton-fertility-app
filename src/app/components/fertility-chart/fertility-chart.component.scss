@@ -3,7 +3,7 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 30px;
-  
+
   h2 {
     color: #2c3e50;
     margin: 0;
@@ -18,19 +18,19 @@
   padding: 15px;
   background-color: #f8f9fa;
   border-radius: 6px;
-  
+
   .legend-item {
     display: flex;
     align-items: center;
     gap: 8px;
-    
+
     .legend-color {
       width: 20px;
       height: 20px;
       border-radius: 50%;
       border: 1px solid #ddd;
     }
-    
+
     .baby-symbol {
       font-size: 20px;
     }
@@ -39,13 +39,13 @@
 
 .calendar-grid {
   overflow-x: auto;
-  
+
   .calendar-header {
     display: grid;
-    grid-template-columns: 120px 80px 60px 1fr;
+    grid-template-columns: 120px 100px 80px 1fr;
     gap: 10px;
     margin-bottom: 10px;
-    
+
     .day-header {
       font-weight: 600;
       padding: 10px;
@@ -54,13 +54,13 @@
       text-align: center;
     }
   }
-  
+
   .calendar-row {
     display: grid;
-    grid-template-columns: 120px 80px 60px 1fr;
+    grid-template-columns: 120px 100px 80px 1fr;
     gap: 10px;
     margin-bottom: 5px;
-    
+
     .date-cell, .symbol-cell, .color-cell, .notes-cell {
       padding: 8px;
       border: 1px solid #ddd;
@@ -70,30 +70,62 @@
       align-items: center;
       justify-content: center;
     }
-    
+
     .date-cell {
       font-weight: 500;
       background-color: #fff;
+      justify-content: flex-start;
     }
-    
+
     .symbol-cell {
       color: white;
       font-weight: bold;
       position: relative;
-      
+      font-size: 14px;
+
       &.empty {
         background-color: #f8f9fa;
         color: #6c757d;
       }
-      
+
       .baby-symbol {
         position: absolute;
         top: -5px;
         right: -5px;
         font-size: 12px;
       }
+
+      .peak-indicator {
+        position: absolute;
+        top: -5px;
+        left: -5px;
+        font-size: 10px;
+        background-color: #ffc107;
+        color: black;
+        border-radius: 50%;
+        width: 16px;
+        height: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .post-peak-indicator {
+        position: absolute;
+        bottom: -5px;
+        right: -5px;
+        font-size: 10px;
+        background-color: #28a745;
+        color: white;
+        border-radius: 50%;
+        width: 16px;
+        height: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
     }
-    
+
     .color-cell {
       .color-indicator {
         width: 30px;
@@ -102,12 +134,14 @@
         border: 1px solid #ddd;
       }
     }
-    
+
     .notes-cell {
       text-align: left;
       justify-content: flex-start;
       font-size: 12px;
       color: #666;
+      font-family: 'Courier New', monospace;
+      font-weight: bold;
     }
   }
 }
@@ -117,22 +151,26 @@
     flex-direction: column;
     gap: 15px;
     text-align: center;
-    
+
     h2 {
       order: -1;
     }
   }
-  
+
   .chart-legend {
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .calendar-grid {
     .calendar-header,
     .calendar-row {
-      grid-template-columns: 100px 70px 50px 1fr;
+      grid-template-columns: 80px 80px 60px 1fr;
       gap: 5px;
+    }
+
+    .calendar-row .date-cell {
+      font-size: 11px;
     }
   }
 }

@@ -1,12 +1,14 @@
 import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { 
-  MucusType, 
-  MucusColor, 
-  MucusConsistency, 
-  SensationType, 
+import {
+  MucusType,
+  MucusColor,
+  MucusConsistency,
+  SensationType,
   BleedingType,
-  FertilityRecord 
+  StretchabilityType,
+  FrequencyType,
+  FertilityRecord
 } from '../../models/fertility-record.model';
 import { FertilityDataService } from '../../services/fertility-data.service';
 
@@ -18,17 +20,19 @@ import { FertilityDataService } from '../../services/fertility-data.service';
 export class RecordFormComponent {
   recordForm: FormGroup;
   showSuccess = false;
-  
+
   // Enum references for template
   mucusTypes = Object.values(MucusType);
   mucusColors = Object.values(MucusColor);
   mucusConsistencies = Object.values(MucusConsistency);
   sensationTypes = Object.values(SensationType);
   bleedingTypes = Object.values(BleedingType);
+  stretchabilityTypes = Object.values(StretchabilityType);
+  frequencyTypes = Object.values(FrequencyType);
 
   constructor(
-    private fb: FormBuilder,
-    private fertilityService: FertilityDataService
+      private fb: FormBuilder,
+      private fertilityService: FertilityDataService
   ) {
     this.recordForm = this.createForm();
   }
@@ -36,7 +40,7 @@ export class RecordFormComponent {
   private createForm(): FormGroup {
     const today = new Date().toISOString().split('T')[0];
     const now = new Date().toTimeString().split(' ')[0].substr(0, 5);
-    
+
     return this.fb.group({
       date: [today, Validators.required],
       time: [now, Validators.required],
@@ -44,6 +48,9 @@ export class RecordFormComponent {
       mucusColor: [MucusColor.CLEAR, Validators.required],
       mucusConsistency: [MucusConsistency.NOTHING, Validators.required],
       sensation: [SensationType.DRY, Validators.required],
+      stretchability: [StretchabilityType.NONE, Validators.required],
+      frequency: [FrequencyType.ALL_DAY, Validators.required],
+      lubrication: [false],
       bleeding: [BleedingType.NONE, Validators.required],
       notes: ['']
     });
@@ -52,35 +59,106 @@ export class RecordFormComponent {
   onSubmit(): void {
     if (this.recordForm.valid) {
       const formValue = this.recordForm.value;
-      
+
       const record: FertilityRecord = {
-        id: '', // Will be set by service
+        id: '',
         date: formValue.date,
         time: formValue.time,
         mucusCharacteristics: {
           type: formValue.mucusType,
           color: formValue.mucusColor,
           consistency: formValue.mucusConsistency,
-          sensation: formValue.sensation
+          sensation: formValue.sensation,
+          stretchability: formValue.stretchability,
+          frequency: formValue.frequency,
+          lubrication: formValue.lubrication
         },
         bleeding: formValue.bleeding,
         notes: formValue.notes || undefined
       };
-      
+
       this.fertilityService.addRecord(record);
-      
-      // Show success message
+
       this.showSuccess = true;
       setTimeout(() => this.showSuccess = false, 3000);
-      
-      // Reset form with current date/time
+
       this.recordForm = this.createForm();
     }
   }
 
-  formatEnumValue(value: string): string {
-    return value.split('-').map(word => 
-      word.charAt(0).toUpperCase() + word.slice(1)
-    ).join(' ');
+  formatMucusType(value: string): string {
+    const translations: { [key: string]: string } = {
+      'dry': 'Seco',
+      'nothing': 'Nada',
+      'tacky': 'Pegajoso',
+      'sticky': 'Aderente',
+      'creamy': 'Cremoso',
+      'eggwhite': 'Clara de Ovo'
+    };
+    return translations[value] || value;
+  }
+
+  formatMucusColor(value: string): string {
+    const translations: { [key: string]: string } = {
+      'clear': 'Transparente',
+      'white': 'Branco',
+      'cloudy-clear': 'Opaco/Transparente',
+      'cloudy-white': 'Opaco/Branco',
+      'yellow': 'Amarelo',
+      'brown': 'Castanho'
+    };
+    return translations[value] || value;
+  }
+
+  formatMucusConsistency(value: string): string {
+    const translations: { [key: string]: string } = {
+      'nothing': 'Nenhuma',
+      'pasty': 'Pastoso',
+      'gummy': 'Goma',
+      'stretchy': 'Elástico'
+    };
+    return translations[value] || value;
+  }
+
+  formatSensation(value: string): string {
+    const translations: { [key: string]: string } = {
+      'dry': 'Seco',
+      'moist': 'Húmido',
+      'wet': 'Molhado',
+      'slippery': 'Brilhante/Escorregadio'
+    };
+    return translations[value] || value;
+  }
+
+  formatStretchability(value: string): string {
+    const translations: { [key: string]: string } = {
+      'none': 'Nenhuma (2-4)',
+      'low': 'Pequena (6)',
+      'medium': 'Média (8)',
+      'high': 'Alta (10)'
+    };
+    return translations[value] || value;
+  }
+
+  formatFrequency(value: string): string {
+    const translations: { [key: string]: string } = {
+      'once': 'Uma vez (X1)',
+      'twice': 'Duas vezes (X2)',
+      'three': 'Três vezes (X3)',
+      'all_day': 'Todo o dia (AD)'
+    };
+    return translations[value] || value;
+  }
+
+  formatBleeding(value: string): string {
+    const translations: { [key: string]: string } = {
+      'none': 'Sem hemorragia',
+      'very-light': 'Muito ligeira (VL)',
+      'light': 'Ligeira (L)',
+      'moderate': 'Moderada (M)',
+      'heavy': 'Abundante (H)',
+      'brown': 'Castanho/Preto (B)'
+    };
+    return translations[value] || value;
   }
 }

@@ -13,6 +13,9 @@ export interface MucusCharacteristics {
   color: MucusColor;
   consistency: MucusConsistency;
   sensation: SensationType;
+  lubrication: boolean;
+  stretchability: StretchabilityType;
+  frequency: FrequencyType;
 }
 
 export enum MucusType {
@@ -47,13 +50,28 @@ export enum SensationType {
   SLIPPERY = 'slippery'
 }
 
+export enum StretchabilityType {
+  NONE = 'none',
+  LOW = 'low',     // 6
+  MEDIUM = 'medium', // 8
+  HIGH = 'high'    // 10
+}
+
+export enum FrequencyType {
+  ONCE = 'once',      // X1
+  TWICE = 'twice',    // X2
+  THREE = 'three',    // X3
+  ALL_DAY = 'all_day' // AD
+}
+
 export enum BleedingType {
   NONE = 'none',
-  VERY_LIGHT = 'very-light',
-  LIGHT = 'light',
-  MODERATE = 'moderate',
-  HEAVY = 'heavy',
-  VERY_HEAVY = 'very-heavy'
+  VERY_LIGHT = 'very-light',    // VL
+  LIGHT = 'light',              // L
+  MODERATE = 'moderate',        // M
+  HEAVY = 'heavy',              // H
+  VERY_HEAVY = 'very-heavy',    // não usado
+  BROWN = 'brown'               // B
 }
 
 export interface DayRecord {
@@ -63,4 +81,6 @@ export interface DayRecord {
   chartSymbol: string;
   chartColor: string;
   baby?: boolean;
+  peakDay?: boolean;
+  postPeakDay?: number; // Days after peak (1, 2, 3...)
 }

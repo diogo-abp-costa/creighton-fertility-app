@@ -1,87 +1,112 @@
 <div class="card">
-  <h2>Add New Record</h2>
-  
+  <h2>Adicionar Novo Registo</h2>
+
   <div *ngIf="showSuccess" class="alert alert-success">
-    Record saved successfully!
+    Registo guardado com sucesso!
   </div>
-  
+
   <form [formGroup]="recordForm" (ngSubmit)="onSubmit()">
     <div class="form-row">
       <div class="form-group">
-        <label for="date">Date:</label>
-        <input 
-          type="date" 
-          id="date" 
-          formControlName="date"
-          required>
+        <label for="date">Data:</label>
+        <input
+            type="date"
+            id="date"
+            formControlName="date"
+            required>
       </div>
-      
+
       <div class="form-group">
-        <label for="time">Time:</label>
-        <input 
-          type="time" 
-          id="time" 
-          formControlName="time"
-          required>
+        <label for="time">Hora:</label>
+        <input
+            type="time"
+            id="time"
+            formControlName="time"
+            required>
       </div>
     </div>
-    
+
     <div class="form-group">
-      <label for="mucusType">Mucus Type:</label>
+      <label for="mucusType">Tipo de Muco:</label>
       <select id="mucusType" formControlName="mucusType" required>
         <option *ngFor="let type of mucusTypes" [value]="type">
-          {{ formatEnumValue(type) }}
+          {{ formatMucusType(type) }}
         </option>
       </select>
     </div>
-    
+
     <div class="form-group">
-      <label for="mucusColor">Mucus Color:</label>
+      <label for="mucusColor">Cor do Muco:</label>
       <select id="mucusColor" formControlName="mucusColor" required>
         <option *ngFor="let color of mucusColors" [value]="color">
-          {{ formatEnumValue(color) }}
+          {{ formatMucusColor(color) }}
         </option>
       </select>
     </div>
-    
+
     <div class="form-group">
-      <label for="mucusConsistency">Mucus Consistency:</label>
+      <label for="mucusConsistency">Consistência do Muco:</label>
       <select id="mucusConsistency" formControlName="mucusConsistency" required>
         <option *ngFor="let consistency of mucusConsistencies" [value]="consistency">
-          {{ formatEnumValue(consistency) }}
+          {{ formatMucusConsistency(consistency) }}
         </option>
       </select>
     </div>
-    
+
     <div class="form-group">
-      <label for="sensation">Sensation:</label>
+      <label for="sensation">Sensação:</label>
       <select id="sensation" formControlName="sensation" required>
         <option *ngFor="let sensation of sensationTypes" [value]="sensation">
-          {{ formatEnumValue(sensation) }}
+          {{ formatSensation(sensation) }}
         </option>
       </select>
     </div>
-    
+
     <div class="form-group">
-      <label for="bleeding">Bleeding:</label>
+      <label for="stretchability">Elasticidade:</label>
+      <select id="stretchability" formControlName="stretchability" required>
+        <option *ngFor="let stretch of stretchabilityTypes" [value]="stretch">
+          {{ formatStretchability(stretch) }}
+        </option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="frequency">Frequência de Observação:</label>
+      <select id="frequency" formControlName="frequency" required>
+        <option *ngFor="let freq of frequencyTypes" [value]="freq">
+          {{ formatFrequency(freq) }}
+        </option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>
+        <input type="checkbox" formControlName="lubrication">
+        Lubrificação presente
+      </label>
+    </div>
+
+    <div class="form-group">
+      <label for="bleeding">Hemorragia:</label>
       <select id="bleeding" formControlName="bleeding" required>
         <option *ngFor="let bleeding of bleedingTypes" [value]="bleeding">
-          {{ formatEnumValue(bleeding) }}
+          {{ formatBleeding(bleeding) }}
         </option>
       </select>
     </div>
-    
+
     <div class="form-group">
-      <label for="notes">Notes:</label>
-      <textarea 
-        id="notes" 
-        formControlName="notes"
-        rows="3"
-        placeholder="Optional notes..."></textarea>
+      <label for="notes">Notas:</label>
+      <textarea
+          id="notes"
+          formControlName="notes"
+          rows="3"
+          placeholder="Notas opcionais..."></textarea>
     </div>
-    
+
     <button type="submit" class="btn btn-primary" [disabled]="!recordForm.valid">
-      Save Record
+      Guardar Registo
     </button>
   </form>
 </div>

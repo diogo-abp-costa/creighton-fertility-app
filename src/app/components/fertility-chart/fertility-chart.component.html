@@ -1,56 +1,63 @@
 <div class="card">
   <div class="chart-header">
-    <button class="btn btn-secondary" (click)="previousMonth()">‹ Previous</button>
+    <button class="btn btn-secondary" (click)="previousMonth()">‹ Anterior</button>
     <h2>{{ getMonthName() }}</h2>
-    <button class="btn btn-secondary" (click)="nextMonth()">Next ›</button>
+    <button class="btn btn-secondary" (click)="nextMonth()">Seguinte ›</button>
   </div>
-  
+
   <div class="chart-container" *ngIf="records$ | async as records">
     <div class="chart-legend">
       <div class="legend-item">
         <span class="legend-color" style="background-color: #28a745;"></span>
-        <span>Infertile (Green)</span>
+        <span>Infértil (Verde)</span>
       </div>
       <div class="legend-item">
-        <span class="legend-color" style="background-color: #ffc107;"></span>
-        <span>Possibly Fertile (Yellow)</span>
+        <span class="legend-color" style="background-color: #ffffff; border: 2px solid #666;"></span>
+        <span>Muco (Branco)</span>
       </div>
       <div class="legend-item">
         <span class="legend-color" style="background-color: #dc3545;"></span>
-        <span>Fertile (Red)</span>
+        <span>Fértil (Vermelho)</span>
       </div>
       <div class="legend-item">
         <span class="baby-symbol">👶</span>
-        <span>Baby symbol indicates infertile days</span>
+        <span>Símbolo bebé indica dias inférteis</span>
       </div>
     </div>
-    
+
     <div class="calendar-grid">
       <div class="calendar-header">
-        <div class="day-header">Date</div>
-        <div class="day-header">Symbol</div>
-        <div class="day-header">Color</div>
-        <div class="day-header">Notes</div>
+        <div class="day-header">Data</div>
+        <div class="day-header">Símbolo</div>
+        <div class="day-header">Cor</div>
+        <div class="day-header">Notas Creighton</div>
       </div>
-      
+
       <div *ngFor="let day of generateCalendarDays()" class="calendar-row">
         <div class="date-cell">
           {{ formatDate(day) }}
         </div>
-        
+
         <ng-container *ngIf="getRecordForDate(getCurrentMonthRecords(records), day) as dayRecord; else emptyDay">
-          <div class="symbol-cell" [style.background-color]="dayRecord.chartColor">
+          <div class="symbol-cell"
+               [style.background-color]="dayRecord.chartColor"
+               [style.color]="getTextColor(dayRecord.chartColor)"
+               [style.border]="dayRecord.chartColor === '#ffffff' ? '2px solid #666' : 'none'">
             {{ dayRecord.chartSymbol }}
             <span *ngIf="dayRecord.baby" class="baby-symbol">👶</span>
+            <span *ngIf="dayRecord.peakDay" class="peak-indicator">P</span>
+            <span *ngIf="dayRecord.postPeakDay" class="post-peak-indicator">{{ dayRecord.postPeakDay }}</span>
           </div>
           <div class="color-cell">
-            <span class="color-indicator" [style.background-color]="dayRecord.chartColor"></span>
+            <span class="color-indicator"
+                  [style.background-color]="dayRecord.chartColor"
+                  [style.border]="dayRecord.chartColor === '#ffffff' ? '2px solid #666' : '1px solid #ddd'"></span>
           </div>
           <div class="notes-cell">
-            {{ dayRecord.selectedRecord?.notes || '' }}
+            {{ getCreightonNotes(dayRecord) }}
           </div>
         </ng-container>
-        
+
         <ng-template #emptyDay>
           <div class="symbol-cell empty">-</div>
           <div class="color-cell">-</div>
