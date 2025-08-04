@@ -90,9 +90,11 @@
 
       .baby-symbol {
         position: absolute;
-        top: -5px;
-        right: -5px;
-        font-size: 12px;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 32px; // Aumentar o tamanho (era 12px)
+        z-index: 1; // Garantir que fica acima de outros elementos
       }
 
       .peak-indicator {

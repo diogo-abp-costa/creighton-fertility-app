@@ -17,6 +17,7 @@
       </div>
       <div class="legend-item">
         <span class="legend-color" style="background-color: #ffffff; border: 2px solid #666;"></span>
+        <span class="baby-symbol">👶</span>
         <span>Dias de muco</span>
       </div>
       <div class="legend-item">
@@ -42,9 +43,7 @@
         <ng-container *ngIf="getRecordForDate(getCurrentMonthRecords(records), day) as dayRecord; else emptyDay">
           <div class="color-cell"
                [style.background-color]="dayRecord.chartColor"
-               [style.color]="getTextColor(dayRecord.chartColor)"
                [style.border]="dayRecord.chartColor === '#ffffff' ? '2px solid #666' : 'none'">
-            {{ dayRecord.chartSymbol }}
             <span *ngIf="dayRecord.baby" class="baby-symbol">👶</span>
             <span *ngIf="dayRecord.peakDay" class="peak-indicator">P</span>
             <span *ngIf="dayRecord.postPeakDay" class="post-peak-indicator">{{ dayRecord.postPeakDay }}</span>

@@ -121,6 +121,7 @@ export class RecordFormComponent {
       };
 
       try {
+        console.log(record)
         this.fertilityService.addRecord(record);
 
         // Show success notification

@@ -1,4 +1,3 @@
-// src/app/components/fertility-chart/fertility-chart.component.ts
 import { Component, OnInit } from '@angular/core';
 import { Observable } from 'rxjs';
 import { DayRecord } from '../../models/fertility-record.model';
