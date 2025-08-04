@@ -1,3 +1,4 @@
+// src/app/components/daily-record/daily-record.component.ts
 import { Component, OnInit } from '@angular/core';
 import { Observable } from 'rxjs';
 import { DayRecord, FertilityRecord, MucusType, BleedingType, SensationType, StretchabilityType, FrequencyType, MucusColor, MucusConsistency } from '../../models/fertility-record.model';
@@ -40,11 +41,11 @@ export class DailyRecordComponent implements OnInit {
         this.fertilityService.deleteRecord(recordId);
         this.loadRecordsForDate();
 
-        // Show success notification
+// Show success notification
         this.notificationService.showSuccess('Registo eliminado com sucesso!');
 
       } catch (error) {
-        // Show error notification if something goes wrong
+// Show error notification if something goes wrong
         this.notificationService.showError('Erro ao eliminar o registo. Tente novamente.');
         console.error('Error deleting record:', error);
       }
@@ -69,28 +70,132 @@ export class DailyRecordComponent implements OnInit {
     const stretchabilityDesc = this.formatStretchability(stretchability);
     const lubricationDesc = lubrication ? 'Com lubrificação' : 'Sem lubrificação';
 
-    return `${typeDesc} - ${colorDesc} - ${consistencyDesc} - ${sensationDesc} - ${stretchabilityDesc} - ${lubricationDesc}`;
+// Get Creighton code for mucus
+    const code = this.getMucusCode(record);
+
+    return `${typeDesc} - ${colorDesc} - ${consistencyDesc} - ${sensationDesc} - ${stretchabilityDesc} - ${lubricationDesc} [${code}]`;
   }
 
   getBleedingDescription(record: FertilityRecord): string {
-    return record.bleeding === 'none' ? 'Sem hemorragia' : this.formatBleeding(record.bleeding);
+    const description = record.bleeding === 'none' ? 'Sem hemorragia' : this.formatBleeding(record.bleeding);
+    const code = this.getBleedingCode(record.bleeding);
+    return code ? `${description} [${code}]` : description;
+  }
+
+  private getMucusCode(record: FertilityRecord): string {
+    const mucus = record.mucusCharacteristics;
+
+    if (mucus.type === MucusType.DRY || mucus.type === MucusType.NOTHING) {
+      return '0';
+    }
+
+    let baseSymbol = '';
+    switch (mucus.stretchability) {
+      case StretchabilityType.NONE:
+        if (mucus.sensation === SensationType.MOIST) {
+          baseSymbol = '2';
+        } else if (mucus.sensation === SensationType.WET) {
+          baseSymbol = '2W';
+        } else if (mucus.sensation === SensationType.SLIPPERY) {
+          baseSymbol = '4';
+        } else {
+          baseSymbol = '2';
+        }
+        break;
+      case StretchabilityType.LOW:
+        baseSymbol = '6';
+        break;
+      case StretchabilityType.MEDIUM:
+        baseSymbol = '8';
+        break;
+      case StretchabilityType.HIGH:
+        baseSymbol = '10';
+        break;
+    }
+
+    let modifiers = '';
+    if (mucus.stretchability !== StretchabilityType.NONE) {
+      switch (mucus.color) {
+        case MucusColor.BROWN:
+          modifiers += 'B';
+          break;
+        case MucusColor.WHITE:
+        case MucusColor.CLOUDY_WHITE:
+          modifiers += 'C';
+          break;
+        case MucusColor.CLEAR:
+          modifiers += 'K';
+          break;
+        case MucusColor.CLOUDY_CLEAR:
+          modifiers += 'C/K';
+          break;
+        case MucusColor.YELLOW:
+          modifiers += 'Y';
+          break;
+      }
+
+      switch (mucus.consistency) {
+        case MucusConsistency.GUMMY:
+          modifiers += 'G';
+          break;
+        case MucusConsistency.PASTY:
+          modifiers += 'P';
+          break;
+      }
+
+      if (mucus.lubrication) {
+        modifiers += 'L';
+      }
+    }
+
+    if (mucus.stretchability === StretchabilityType.HIGH && mucus.lubrication) {
+      if (mucus.sensation === SensationType.MOIST) {
+        baseSymbol = '10DL';
+        modifiers = modifiers.replace('L', '');
+      } else if (mucus.sensation === SensationType.SLIPPERY) {
+        baseSymbol = '10SL';
+        modifiers = modifiers.replace('L', '');
+      } else if (mucus.sensation === SensationType.WET) {
+        baseSymbol = '10WL';
+        modifiers = modifiers.replace('L', '');
+      }
+    }
+
+    return baseSymbol + modifiers;
+  }
+
+  private getBleedingCode(bleeding: BleedingType): string {
+    switch (bleeding) {
+      case BleedingType.VERY_LIGHT:
+        return 'VL';
+      case BleedingType.LIGHT:
+        return 'L';
+      case BleedingType.MODERATE:
+        return 'M';
+      case BleedingType.HEAVY:
+        return 'H';
+      case BleedingType.BROWN:
+        return 'B';
+      default:
+        return '';
+    }
   }
 
   getCreightonSymbols(record: FertilityRecord): string {
-    // Generate Creighton symbols
+// Generate Creighton symbols
     return this.generateCreightonSymbols(record);
   }
 
   getOriginalNotes(record: FertilityRecord): string {
     if (!record.notes) return '';
 
-    // Extract original notes (everything after ' - ')
+// Extract original notes (everything after ' - ')
     const dashIndex = record.notes.indexOf(' - ');
     if (dashIndex !== -1) {
       return record.notes.substring(dashIndex + 3);
     }
 
-    // If no dash found, check if it's all Creighton symbols
+// If no dash found, check if it's all Creighton symbols
     const creightonSymbols = this.generateCreightonSymbols(record);
     if (record.notes === creightonSymbols) {
       return '';
@@ -102,112 +207,15 @@ export class DailyRecordComponent implements OnInit {
   private generateCreightonSymbols(record: FertilityRecord): string {
     const symbols: string[] = [];
 
-    // Bleeding symbols
+// Bleeding symbols
     if (record.bleeding !== BleedingType.NONE) {
-      switch (record.bleeding) {
-        case BleedingType.VERY_LIGHT:
-          symbols.push('VL');
-          break;
-        case BleedingType.LIGHT:
-          symbols.push('L');
-          break;
-        case BleedingType.MODERATE:
-          symbols.push('M');
-          break;
-        case BleedingType.HEAVY:
-          symbols.push('H');
-          break;
-        case BleedingType.BROWN:
-          symbols.push('B');
-          break;
-      }
+      symbols.push(this.getBleedingCode(record.bleeding));
     } else {
-      // Mucus symbols
-      const mucus = record.mucusCharacteristics;
-
-      if (mucus.type === MucusType.DRY || mucus.type === MucusType.NOTHING) {
-        symbols.push('0');
-      } else {
-        // Stretchability numbers
-        let baseSymbol = '';
-        switch (mucus.stretchability) {
-          case StretchabilityType.NONE:
-            if (mucus.sensation === SensationType.MOIST) {
-              baseSymbol = '2';
-            } else if (mucus.sensation === SensationType.WET) {
-              baseSymbol = '2W';
-            } else if (mucus.sensation === SensationType.SLIPPERY) {
-              baseSymbol = '4';
-            } else {
-              baseSymbol = '2';
-            }
-            break;
-          case StretchabilityType.LOW:
-            baseSymbol = '6';
-            break;
-          case StretchabilityType.MEDIUM:
-            baseSymbol = '8';
-            break;
-          case StretchabilityType.HIGH:
-            baseSymbol = '10';
-            break;
-        }
-
-        // Add color/consistency modifiers
-        let modifiers = '';
-        if (mucus.stretchability !== StretchabilityType.NONE) {
-          switch (mucus.color) {
-            case MucusColor.BROWN:
-              modifiers += 'B';
-              break;
-            case MucusColor.WHITE:
-            case MucusColor.CLOUDY_WHITE:
-              modifiers += 'C';
-              break;
-            case MucusColor.CLEAR:
-              modifiers += 'K';
-              break;
-            case MucusColor.CLOUDY_CLEAR:
-              modifiers += 'C/K';
-              break;
-            case MucusColor.YELLOW:
-              modifiers += 'Y';
-              break;
-          }
-
-          switch (mucus.consistency) {
-            case MucusConsistency.GUMMY:
-              modifiers += 'G';
-              break;
-            case MucusConsistency.PASTY:
-              modifiers += 'P';
-              break;
-          }
-
-          if (mucus.lubrication) {
-            modifiers += 'L';
-          }
-        }
-
-        // Special cases for lubrication with high stretchability
-        if (mucus.stretchability === StretchabilityType.HIGH && mucus.lubrication) {
-          if (mucus.sensation === SensationType.MOIST) {
-            baseSymbol = '10DL';
-            modifiers = modifiers.replace('L', ''); // Remove L as it's already in 10DL
-          } else if (mucus.sensation === SensationType.SLIPPERY) {
-            baseSymbol = '10SL';
-            modifiers = modifiers.replace('L', ''); // Remove L as it's already in 10SL
-          } else if (mucus.sensation === SensationType.WET) {
-            baseSymbol = '10WL';
-            modifiers = modifiers.replace('L', ''); // Remove L as it's already in 10WL
-          }
-        }
-
-        symbols.push(baseSymbol + modifiers);
-      }
+// Mucus symbols
+      symbols.push(this.getMucusCode(record));
     }
 
-    // Add frequency
+// Add frequency
     switch (record.mucusCharacteristics.frequency) {
       case FrequencyType.ONCE:
         symbols.push('X1');

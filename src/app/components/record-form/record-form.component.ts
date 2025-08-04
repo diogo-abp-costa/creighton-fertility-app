@@ -252,62 +252,112 @@ export class RecordFormComponent {
     }
   }
 
+  // Helper method to get code for mucus type
+  private getMucusTypeCode(mucusType: SimplifiedMucusType): string {
+    const convertedData = this.convertSimplifiedMucusType(mucusType);
+
+    if (convertedData.type === MucusType.DRY) {
+      return '0';
+    }
+
+    let baseSymbol = '';
+    switch (convertedData.stretchability) {
+      case StretchabilityType.NONE:
+        if (convertedData.sensation === SensationType.MOIST) {
+          baseSymbol = '2';
+        } else if (convertedData.sensation === SensationType.WET) {
+          baseSymbol = '2W';
+        } else if (convertedData.sensation === SensationType.SLIPPERY) {
+          baseSymbol = '4';
+        } else {
+          baseSymbol = '2';
+        }
+        break;
+      case StretchabilityType.LOW:
+        baseSymbol = '6';
+        break;
+      case StretchabilityType.MEDIUM:
+        baseSymbol = '8';
+        break;
+      case StretchabilityType.HIGH:
+        baseSymbol = '10';
+        break;
+    }
+
+    return baseSymbol;
+  }
+
   formatMucusType(value: string): string {
     const translations: { [key: string]: string } = {
-      'dry': 'Seco',
-      'moist-no-lubrication': 'Húmido sem lubrificação',
-      'wet-no-lubrication': 'Molhado sem lubrificação',
-      'slippery-no-lubrication': 'Brilhante sem lubrificação',
-      'low-stretch': 'Elasticidade pequena (<0,5 cm)',
-      'medium-stretch': 'Elasticidade média (1-2cm)',
-      'high-stretch': 'Elasticidade alta (>2,5cm)',
-      'moist-with-lubrication': 'Húmido com lubrificação',
-      'slippery-with-lubrication': 'Brilhante com lubrificação',
-      'wet-with-lubrication': 'Molhado com lubrificação'
+      'dry': 'Seco [0]',
+      'moist-no-lubrication': 'Húmido sem lubrificação [2]',
+      'wet-no-lubrication': 'Molhado sem lubrificação [2W]',
+      'slippery-no-lubrication': 'Brilhante sem lubrificação [4]',
+      'low-stretch': 'Elasticidade pequena (<0,5 cm) [6]',
+      'medium-stretch': 'Elasticidade média (1-2cm) [8]',
+      'high-stretch': 'Elasticidade alta (>2,5cm) [10]',
+      'moist-with-lubrication': 'Húmido com lubrificação [2]',
+      'slippery-with-lubrication': 'Brilhante com lubrificação [4]',
+      'wet-with-lubrication': 'Molhado com lubrificação [2W]'
     };
     return translations[value] || value;
   }
 
   formatMucusColor(value: string): string {
+    const codeMap: { [key: string]: string } = {
+      'clear': 'K',
+      'white': 'C',
+      'cloudy-clear': 'C/K',
+      'cloudy-white': 'C',
+      'yellow': 'Y',
+      'brown': 'B'
+    };
+
     const translations: { [key: string]: string } = {
-      'clear': 'Transparente',
-      'white': 'Branco',
-      'cloudy-clear': 'Transparente',
-      'cloudy-white': 'Branco',
-      'yellow': 'Amarelo',
-      'brown': 'Castanho'
+      'clear': `Transparente [${codeMap[value]}]`,
+      'white': `Branco [${codeMap[value]}]`,
+      'cloudy-clear': `Opaco/Transparente [${codeMap[value]}]`,
+      'cloudy-white': `Opaco/Branco [${codeMap[value]}]`,
+      'yellow': `Amarelo [${codeMap[value]}]`,
+      'brown': `Castanho [${codeMap[value]}]`
     };
     return translations[value] || value;
   }
 
   formatMucusConsistency(value: string): string {
+    const codeMap: { [key: string]: string } = {
+      'nothing': 'L',
+      'pasty': 'P',
+      'gummy': 'G',
+      'stretchy': ''
+    };
+
     const translations: { [key: string]: string } = {
-      'nothing': 'Lubrificação',
-      'pasty': 'Pastoso',
-      'gummy': 'Goma',
+      'nothing': `Lubrificação [${codeMap[value]}]`,
+      'pasty': `Pastoso [${codeMap[value]}]`,
+      'gummy': `Goma [${codeMap[value]}]`,
       'stretchy': 'Opaco'
     };
     return translations[value] || value;
   }
 
-  formatFrequency(value: string): string {
-    const translations: { [key: string]: string } = {
-      'once': 'Uma vez (X1)',
-      'twice': 'Duas vezes (X2)',
-      'three': 'Três vezes (X3)',
-      'all_day': 'Todo o dia (AD)'
-    };
-    return translations[value] || value;
-  }
-
   formatBleeding(value: string): string {
+    const codeMap: { [key: string]: string } = {
+      'none': '',
+      'very-light': 'VL',
+      'light': 'L',
+      'moderate': 'M',
+      'heavy': 'H',
+      'brown': 'B'
+    };
+
     const translations: { [key: string]: string } = {
       'none': 'Nenhum',
-      'very-light': 'Muito ligeiro',
-      'light': 'Ligeiro',
-      'moderate': 'Moderado',
-      'heavy': 'Abundante',
-      'brown': 'Castanho/Preto'
+      'very-light': `Muito ligeiro [${codeMap[value]}]`,
+      'light': `Ligeiro [${codeMap[value]}]`,
+      'moderate': `Moderado [${codeMap[value]}]`,
+      'heavy': `Abundante [${codeMap[value]}]`,
+      'brown': `Castanho/Preto [${codeMap[value]}]`
     };
     return translations[value] || value;
   }

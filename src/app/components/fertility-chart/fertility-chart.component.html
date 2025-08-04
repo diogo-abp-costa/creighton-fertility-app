@@ -1,3 +1,4 @@
+// src/app/components/fertility-chart/fertility-chart.component.html
 <div class="card">
   <div class="chart-header">
     <button class="btn btn-secondary" (click)="previousMonth()">‹ Anterior</button>
@@ -9,7 +10,7 @@
     <div class="chart-legend">
       <div class="legend-item">
         <span class="legend-color" style="background-color: #28a745;"></span>
-        <span>Infértil (Verde)</span>
+        <span>Infértil Seco (Verde)</span>
       </div>
       <div class="legend-item">
         <span class="legend-color" style="background-color: #ffffff; border: 2px solid #666;"></span>
@@ -17,7 +18,7 @@
       </div>
       <div class="legend-item">
         <span class="legend-color" style="background-color: #dc3545;"></span>
-        <span>Fértil (Vermelho)</span>
+        <span>Fértil/Fluxo (Vermelho)</span>
       </div>
       <div class="legend-item">
         <span class="baby-symbol">👶</span>
@@ -30,7 +31,7 @@
         <div class="day-header">Data</div>
         <div class="day-header">Símbolo</div>
         <div class="day-header">Cor</div>
-        <div class="day-header">Notas Creighton</div>
+        <div class="day-header">Códigos e Notas</div>
       </div>
 
       <div *ngFor="let day of generateCalendarDays()" class="calendar-row">
@@ -54,7 +55,8 @@
                   [style.border]="dayRecord.chartColor === '#ffffff' ? '2px solid #666' : '1px solid #ddd'"></span>
           </div>
           <div class="notes-cell">
-            {{ getCreightonNotes(dayRecord) }}
+            <div class="codes-section">{{ getCreightonCodes(dayRecord) }}</div>
+            <div *ngIf="getUserNotes(dayRecord)" class="user-notes-section">{{ getUserNotes(dayRecord) }}</div>
           </div>
         </ng-container>
 
