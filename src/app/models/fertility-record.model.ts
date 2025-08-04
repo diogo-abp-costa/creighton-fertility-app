@@ -5,6 +5,7 @@ export interface FertilityRecord {
   mucusCharacteristics: MucusCharacteristics;
   bleeding: BleedingType;
   notes?: string;
+  hasIntercourse: boolean;
   isSelected?: boolean;
 }
 
@@ -28,19 +29,17 @@ export enum MucusType {
 }
 
 export enum MucusColor {
-  CLEAR = 'clear',
-  WHITE = 'white',
-  CLOUDY_CLEAR = 'cloudy-clear',
-  CLOUDY_WHITE = 'cloudy-white',
-  YELLOW = 'yellow',
-  BROWN = 'brown'
+  CLEAR = 'clear',           // K - Transparente
+  WHITE = 'white',           // C - Opaco (branco)
+  CLOUDY_CLEAR = 'cloudy-clear', // C/K - Opaco e transparente
+  YELLOW = 'yellow',         // Y - Amarelo (ou amarelo claro)
+  BROWN = 'brown'            // B - Castanho (ou negro)
 }
 
 export enum MucusConsistency {
   NOTHING = 'nothing',
   PASTY = 'pasty',
-  GUMMY = 'gummy',
-  STRETCHY = 'stretchy'
+  GUMMY = 'gummy'
 }
 
 export enum SensationType {
@@ -70,7 +69,6 @@ export enum BleedingType {
   LIGHT = 'light',              // L
   MODERATE = 'moderate',        // M
   HEAVY = 'heavy',              // H
-  VERY_HEAVY = 'very-heavy',    // não usado
   BROWN = 'brown'               // B
 }
 

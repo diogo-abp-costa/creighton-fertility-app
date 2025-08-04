@@ -73,19 +73,12 @@ export class FertilityChartComponent implements OnInit {
   }
 
   getCreightonCodes(dayRecord: DayRecord): string {
-    if (!dayRecord.selectedRecord || !dayRecord.selectedRecord.notes) {
+    if (!dayRecord.selectedRecord) {
       return '';
     }
 
-// Extract Creighton codes (everything before ' - ')
-    const notes = dayRecord.selectedRecord.notes;
-    const dashIndex = notes.indexOf(' - ');
-    if (dashIndex !== -1) {
-      return notes.substring(0, dashIndex);
-    }
-
-// If no dash found, assume it's all Creighton codes
-    return notes;
+    // Get Creighton codes directly from the service
+    return this.fertilityService.getCreightonSymbols(dayRecord.selectedRecord);
   }
 
   getUserNotes(dayRecord: DayRecord): string {
@@ -93,35 +86,38 @@ export class FertilityChartComponent implements OnInit {
       return '';
     }
 
-// Collect all user notes from all records of this day
+    // Collect all user notes from all records of this day
     const userNotes: string[] = [];
 
     for (const record of dayRecord.records) {
       if (record.notes) {
-        const dashIndex = record.notes.indexOf(' - ');
-        if (dashIndex !== -1) {
-          const userNote = record.notes.substring(dashIndex + 3).trim();
-          if (userNote && userNote !== 'I' && !userNote.startsWith('I - ')) {
-// Remove 'I' prefix if it's there (sexual contact)
-            const cleanNote = userNote.replace(/^I\s*-\s*/, '').trim();
-            if (cleanNote) {
-              userNotes.push(cleanNote);
-            }
-          }
+        // Use the entire note as entered by the user
+        // No need to extract from dash anymore since we don't add codes to notes
+        if (record.notes !== 'I') {
+          // If it's not just the intercourse marker
+          userNotes.push(record.notes);
         }
       }
     }
 
-// Check for sexual contact indicator
+    // Check for sexual contact indicator
     const hasIntercourse = dayRecord.records.some(record =>
-        record.notes && (record.notes.includes('I - ') || record.notes === 'I')
+        record.hasIntercourse
     );
 
+    // Format the final notes string
+    let formattedNotes = '';
+    
     if (hasIntercourse) {
-      userNotes.unshift('Contacto sexual');
+      formattedNotes = '<strong>I - Contacto Sexual</strong>';
+      if (userNotes.length > 0) {
+        formattedNotes += userNotes.join('\n');
+      }
+    } else if (userNotes.length > 0) {
+      formattedNotes = userNotes.join('\n');
     }
 
-    return userNotes.join('\n');
+    return formattedNotes;
   }
 
   generateCalendarDays(): string[] {

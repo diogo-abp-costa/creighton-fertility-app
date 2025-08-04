@@ -39,7 +39,7 @@ export class RecordFormComponent {
   mucusTypes = Object.values(SimplifiedMucusType);
   mucusColors = Object.values(MucusColor);
   mucusConsistencies = Object.values(MucusConsistency);
-  bleedingTypes = Object.values(BleedingType).filter(type => type !== BleedingType.VERY_HEAVY);
+  bleedingTypes = Object.values(BleedingType);
 
   constructor(
       private fb: FormBuilder,
@@ -101,9 +101,6 @@ export class RecordFormComponent {
 
       // Handle sexual contact note
       let notes = formValue.notes || '';
-      if (formValue.sexualContact) {
-        notes = notes ? `I - ${notes}` : 'I';
-      }
 
       const record: FertilityRecord = {
         id: '',
@@ -119,7 +116,8 @@ export class RecordFormComponent {
           lubrication: convertedMucusData.lubrication
         },
         bleeding: formValue.bleeding,
-        notes: notes || undefined
+        notes: notes || undefined,
+        hasIntercourse: formValue.sexualContact || false
       };
 
       try {
@@ -222,7 +220,7 @@ export class RecordFormComponent {
         return {
           type: MucusType.STICKY,
           sensation: SensationType.MOIST,
-          stretchability: StretchabilityType.NONE,
+          stretchability: StretchabilityType.HIGH,
           lubrication: true
         };
 
@@ -230,7 +228,7 @@ export class RecordFormComponent {
         return {
           type: MucusType.CREAMY,
           sensation: SensationType.SLIPPERY,
-          stretchability: StretchabilityType.NONE,
+          stretchability: StretchabilityType.HIGH,
           lubrication: true
         };
 
@@ -238,7 +236,7 @@ export class RecordFormComponent {
         return {
           type: MucusType.STICKY,
           sensation: SensationType.WET,
-          stretchability: StretchabilityType.NONE,
+          stretchability: StretchabilityType.HIGH,
           lubrication: true
         };
 
@@ -284,6 +282,17 @@ export class RecordFormComponent {
         break;
     }
 
+    // Special cases for lubrication with high stretchability
+    if (convertedData.stretchability === StretchabilityType.HIGH && convertedData.lubrication) {
+      if (convertedData.sensation === SensationType.MOIST) {
+        baseSymbol = '10DL';
+      } else if (convertedData.sensation === SensationType.SLIPPERY) {
+        baseSymbol = '10SL';
+      } else if (convertedData.sensation === SensationType.WET) {
+        baseSymbol = '10WL';
+      }
+    }
+
     return baseSymbol;
   }
 
@@ -293,12 +302,12 @@ export class RecordFormComponent {
       'moist-no-lubrication': 'Húmido sem lubrificação [2]',
       'wet-no-lubrication': 'Molhado sem lubrificação [2W]',
       'slippery-no-lubrication': 'Brilhante sem lubrificação [4]',
-      'low-stretch': 'Elasticidade pequena (<0,5 cm) [6]',
-      'medium-stretch': 'Elasticidade média (1-2cm) [8]',
-      'high-stretch': 'Elasticidade alta (>2,5cm) [10]',
-      'moist-with-lubrication': 'Húmido com lubrificação [2]',
-      'slippery-with-lubrication': 'Brilhante com lubrificação [4]',
-      'wet-with-lubrication': 'Molhado com lubrificação [2W]'
+      'low-stretch': 'Elasticidade pequena [6]',
+      'medium-stretch': 'Elasticidade média [8]',
+      'high-stretch': 'Elasticidade alta [10]',
+      'moist-with-lubrication': 'Húmido com lubrificação [10DL]',
+      'slippery-with-lubrication': 'Brilhante com lubrificação [10SL]',
+      'wet-with-lubrication': 'Molhado com lubrificação [10WL]'
     };
     return translations[value] || value;
   }
@@ -308,18 +317,16 @@ export class RecordFormComponent {
       'clear': 'K',
       'white': 'C',
       'cloudy-clear': 'C/K',
-      'cloudy-white': 'C',
       'yellow': 'Y',
       'brown': 'B'
     };
 
     const translations: { [key: string]: string } = {
       'clear': `Transparente [${codeMap[value]}]`,
-      'white': `Branco [${codeMap[value]}]`,
-      'cloudy-clear': `Opaco/Transparente [${codeMap[value]}]`,
-      'cloudy-white': `Opaco/Branco [${codeMap[value]}]`,
-      'yellow': `Amarelo [${codeMap[value]}]`,
-      'brown': `Castanho [${codeMap[value]}]`
+      'white': `Opaco (branco) [${codeMap[value]}]`,
+      'cloudy-clear': `Opaco e transparente [${codeMap[value]}]`,
+      'yellow': `Amarelo (ou amarelo claro) [${codeMap[value]}]`,
+      'brown': `Castanho (ou negro) [${codeMap[value]}]`
     };
     return translations[value] || value;
   }
@@ -328,15 +335,13 @@ export class RecordFormComponent {
     const codeMap: { [key: string]: string } = {
       'nothing': 'L',
       'pasty': 'P',
-      'gummy': 'G',
-      'stretchy': ''
+      'gummy': 'G'
     };
 
     const translations: { [key: string]: string } = {
       'nothing': `Lubrificação [${codeMap[value]}]`,
       'pasty': `Pastoso [${codeMap[value]}]`,
-      'gummy': `Goma [${codeMap[value]}]`,
-      'stretchy': 'Opaco'
+      'gummy': `Goma [${codeMap[value]}]`
     };
     return translations[value] || value;
   }
@@ -353,7 +358,7 @@ export class RecordFormComponent {
 
     const translations: { [key: string]: string } = {
       'none': 'Nenhum',
-      'very-light': `Muito ligeiro [${codeMap[value]}]`,
+      'very-light': `Muito ligeiro (spotting) [${codeMap[value]}]`,
       'light': `Ligeiro [${codeMap[value]}]`,
       'moderate': `Moderado [${codeMap[value]}]`,
       'heavy': `Abundante [${codeMap[value]}]`,

@@ -42,7 +42,7 @@
 
   .calendar-header {
     display: grid;
-    grid-template-columns: 120px 100px 80px 1fr;
+    grid-template-columns: 120px 100px 120px 1fr;
     gap: 10px;
     margin-bottom: 10px;
 
@@ -57,11 +57,11 @@
 
   .calendar-row {
     display: grid;
-    grid-template-columns: 120px 100px 80px 1fr;
+    grid-template-columns: 120px 100px 120px 1fr;
     gap: 10px;
     margin-bottom: 5px;
 
-    .date-cell, .symbol-cell, .color-cell, .notes-cell {
+    .date-cell, .color-cell, .codes-cell, .notes-cell {
       padding: 8px;
       border: 1px solid #ddd;
       border-radius: 4px;
@@ -77,7 +77,7 @@
       justify-content: flex-start;
     }
 
-    .symbol-cell {
+    .color-cell {
       color: white;
       font-weight: bold;
       position: relative;
@@ -125,41 +125,35 @@
         justify-content: center;
       }
     }
-
-    .color-cell {
-      .color-indicator {
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        border: 1px solid #ddd;
-      }
+    
+    .codes-cell {
+      text-align: left;
+      justify-content: flex-start;
+      font-size: 12px;
+      font-family: 'Courier New', monospace;
+      font-weight: bold;
+      color: #007bff;
+      background-color: #f8f9fa;
     }
 
     .notes-cell {
       text-align: left;
       justify-content: flex-start;
-      font-size: 12px;
-      color: #666;
-      flex-direction: column;
       align-items: flex-start;
-      gap: 4px;
-
-      .codes-section {
-        font-family: 'Courier New', monospace;
+      font-size: 10px;
+      color: #495057;
+      font-style: italic;
+      white-space: pre-wrap;
+      line-height: 1.3;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      
+      strong {
+        display: block;
+        font-style: normal;
+        margin-bottom: 2px;
         font-weight: bold;
-        color: #007bff;
-        background-color: #f8f9fa;
-        padding: 2px 6px;
-        border-radius: 3px;
-        font-size: 11px;
-      }
-
-      .user-notes-section {
-        font-size: 10px;
-        color: #495057;
-        font-style: italic;
-        white-space: pre-line;
-        line-height: 1.3;
       }
     }
   }
@@ -184,22 +178,20 @@
   .calendar-grid {
     .calendar-header,
     .calendar-row {
-      grid-template-columns: 80px 80px 60px 1fr;
+      grid-template-columns: 80px 80px 100px 1fr;
       gap: 5px;
     }
 
     .calendar-row .date-cell {
       font-size: 11px;
     }
+    
+    .codes-cell {
+      font-size: 10px;
+    }
 
     .notes-cell {
-      .codes-section {
-        font-size: 10px;
-      }
-
-      .user-notes-section {
-        font-size: 9px;
-      }
+      font-size: 9px;
     }
   }
 }

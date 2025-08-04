@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Notes Test</title>
+  <style>
+    .notes-cell {
+      text-align: left;
+      justify-content: flex-start;
+      align-items: flex-start;
+      font-size: 10px;
+      color: #495057;
+      font-style: italic;
+      white-space: pre-wrap;
+      line-height: 1.3;
+      padding-left: 8px;
+      border: 1px solid #ddd;
+      width: 300px;
+      min-height: 100px;
+      display: flex;
+    }
+    
+    .notes-cell strong {
+      display: block;
+      font-style: normal;
+      margin-bottom: 2px;
+      margin-left: -8px;
+    }
+
+    /* Alternative styling to test */
+    .notes-cell-alt {
+      text-align: left;
+      justify-content: flex-start;
+      align-items: flex-start;
+      font-size: 10px;
+      color: #495057;
+      font-style: italic;
+      white-space: pre-wrap;
+      line-height: 1.3;
+      border: 1px solid #ddd;
+      width: 300px;
+      min-height: 100px;
+      display: flex;
+      flex-direction: column;
+      padding: 8px;
+    }
+    
+    .notes-cell-alt strong {
+      display: block;
+      font-style: normal;
+      margin-bottom: 2px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h3>Current Implementation</h3>
+  <div class="notes-cell">
+    <strong>I - Contacto Sexual</strong>
+Nota do utilizador
+Outra nota do utilizador
+  </div>
+
+  <h3>Alternative Implementation</h3>
+  <div class="notes-cell-alt">
+    <strong>I - Contacto Sexual</strong>
+Nota do utilizador
+Outra nota do utilizador
+  </div>
+</body>
+</html>

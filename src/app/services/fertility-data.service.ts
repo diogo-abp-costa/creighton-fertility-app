@@ -81,6 +81,91 @@ export class FertilityDataService {
     this.recordsSubject.next(records);
     this.saveRecords(records);
   }
+  
+  getCreightonSymbols(record: FertilityRecord): string {
+    return this.generateCreightonSymbols(record);
+  }
+  
+  getMucusCode(record: FertilityRecord): string {
+    const mucus = record.mucusCharacteristics;
+
+    if (mucus.type === MucusType.DRY || mucus.type === MucusType.NOTHING) {
+      return '0';
+    }
+
+    let baseSymbol = '';
+    switch (mucus.stretchability) {
+      case StretchabilityType.NONE:
+        if (mucus.sensation === SensationType.MOIST) {
+          baseSymbol = '2';
+        } else if (mucus.sensation === SensationType.WET) {
+          baseSymbol = '2W';
+        } else if (mucus.sensation === SensationType.SLIPPERY) {
+          baseSymbol = '4';
+        } else {
+          baseSymbol = '2';
+        }
+        break;
+      case StretchabilityType.LOW:
+        baseSymbol = '6';
+        break;
+      case StretchabilityType.MEDIUM:
+        baseSymbol = '8';
+        break;
+      case StretchabilityType.HIGH:
+        baseSymbol = '10';
+        break;
+    }
+
+    let modifiers = '';
+    if (mucus.stretchability !== StretchabilityType.NONE) {
+      switch (mucus.color) {
+        case MucusColor.BROWN:
+          modifiers += 'B';  // Castanho (ou negro)
+          break;
+        case MucusColor.WHITE:
+          modifiers += 'C';  // Opaco (branco)
+          break;
+        case MucusColor.CLEAR:
+          modifiers += 'K';  // Transparente
+          break;
+        case MucusColor.CLOUDY_CLEAR:
+          modifiers += 'C/K';  // Opaco e transparente
+          break;
+        case MucusColor.YELLOW:
+          modifiers += 'Y';  // Amarelo (ou amarelo claro)
+          break;
+      }
+
+      switch (mucus.consistency) {
+        case MucusConsistency.GUMMY:
+          modifiers += 'G';
+          break;
+        case MucusConsistency.PASTY:
+          modifiers += 'P';
+          break;
+      }
+
+      if (mucus.lubrication) {
+        modifiers += 'L';
+      }
+    }
+
+    if (mucus.stretchability === StretchabilityType.HIGH && mucus.lubrication) {
+      if (mucus.sensation === SensationType.MOIST) {
+        baseSymbol = '10DL';
+        modifiers = ''; // Clear all modifiers for special lubrication codes
+      } else if (mucus.sensation === SensationType.SLIPPERY) {
+        baseSymbol = '10SL';
+        modifiers = ''; // Clear all modifiers for special lubrication codes
+      } else if (mucus.sensation === SensationType.WET) {
+        baseSymbol = '10WL';
+        modifiers = ''; // Clear all modifiers for special lubrication codes
+      }
+    }
+
+    return baseSymbol + modifiers;
+  }
 
   private updateDayRecord(dayRecord: DayRecord): void {
     if (dayRecord.records.length === 0) return;
@@ -96,11 +181,8 @@ export class FertilityDataService {
     dayRecord.chartColor = chartInfo.color;
     dayRecord.baby = chartInfo.baby;
 
-    // Generate automatic notes based on Creighton symbols
-    const automaticNotes = this.generateCreightonSymbols(mostSignificant);
-    if (automaticNotes) {
-      dayRecord.selectedRecord.notes = automaticNotes + (mostSignificant.notes ? ' - ' + mostSignificant.notes : '');
-    }
+    // Store Creighton symbols separately from user notes
+    // We don't modify the original notes entered by the user
   }
 
   private calculateFrequencyForMostSignificant(dayRecord: DayRecord, mostSignificant: FertilityRecord): void {
@@ -166,12 +248,12 @@ export class FertilityDataService {
           const postPeakRecord = sortedRecords[i + j];
           postPeakRecord.postPeakDay = j;
 
-          // Update color for post-peak days (Green with baby for dry days)
+          // Update color for post-peak days (Green with baby for dry but fertile days)
           if (postPeakRecord.selectedRecord &&
               (postPeakRecord.selectedRecord.mucusCharacteristics.type === MucusType.DRY ||
                   postPeakRecord.selectedRecord.mucusCharacteristics.type === MucusType.NOTHING) &&
               postPeakRecord.selectedRecord.bleeding === BleedingType.NONE) {
-            postPeakRecord.chartColor = '#28a745'; // Green
+            postPeakRecord.chartColor = '#28a745'; // Green for dry but fertile days
             postPeakRecord.baby = true;
           }
         }
@@ -264,20 +346,19 @@ export class FertilityDataService {
         if (mucus.stretchability !== StretchabilityType.NONE) {
           switch (mucus.color) {
             case MucusColor.BROWN:
-              modifiers += 'B';
+              modifiers += 'B';  // Castanho (ou negro)
               break;
             case MucusColor.WHITE:
-            case MucusColor.CLOUDY_WHITE:
-              modifiers += 'C';
+              modifiers += 'C';  // Opaco (branco)
               break;
             case MucusColor.CLEAR:
-              modifiers += 'K';
+              modifiers += 'K';  // Transparente
               break;
             case MucusColor.CLOUDY_CLEAR:
-              modifiers += 'C/K';
+              modifiers += 'C/K';  // Opaco e transparente
               break;
             case MucusColor.YELLOW:
-              modifiers += 'Y';
+              modifiers += 'Y';  // Amarelo (ou amarelo claro)
               break;
           }
 
@@ -299,13 +380,13 @@ export class FertilityDataService {
         if (mucus.stretchability === StretchabilityType.HIGH && mucus.lubrication) {
           if (mucus.sensation === SensationType.MOIST) {
             baseSymbol = '10DL';
-            modifiers = modifiers.replace('L', '');
+            modifiers = ''; // Clear all modifiers for special lubrication codes
           } else if (mucus.sensation === SensationType.SLIPPERY) {
             baseSymbol = '10SL';
-            modifiers = modifiers.replace('L', '');
+            modifiers = ''; // Clear all modifiers for special lubrication codes
           } else if (mucus.sensation === SensationType.WET) {
             baseSymbol = '10WL';
-            modifiers = modifiers.replace('L', '');
+            modifiers = ''; // Clear all modifiers for special lubrication codes
           }
         }
 
@@ -383,7 +464,7 @@ export class FertilityDataService {
     if (record.bleeding !== BleedingType.NONE) {
       return {
         symbol: this.getBleedingSymbol(record.bleeding),
-        color: '#dc3545', // Red
+        color: '#dc3545', // Red for days with menstrual flow
         baby: false
       };
     }
@@ -392,28 +473,20 @@ export class FertilityDataService {
     switch (record.mucusCharacteristics.type) {
       case MucusType.DRY:
       case MucusType.NOTHING:
-        return { symbol: '0', color: '#28a745', baby: true }; // Green with baby
+        return { symbol: '0', color: '#28a745', baby: true }; // Green for infertile dry days
 
       case MucusType.TACKY:
       case MucusType.STICKY:
-        return { symbol: 'M', color: '#ffffff', baby: true }; // White with baby
-
       case MucusType.CREAMY:
-        if (record.mucusCharacteristics.sensation === SensationType.SLIPPERY ||
-            record.mucusCharacteristics.stretchability !== StretchabilityType.NONE) {
-          return { symbol: 'L', color: '#dc3545', baby: false }; // Red - fertile
-        }
-        return { symbol: 'M', color: '#ffffff', baby: true }; // White with baby
-
       case MucusType.EGG_WHITE:
-        return { symbol: 'L', color: '#dc3545', baby: false }; // Red - fertile
+        return { symbol: 'M', color: '#ffffff', baby: true }; // White with baby for days with mucus
 
       default:
         return { symbol: '?', color: '#6c757d', baby: true };
     }
   }
 
-  private getBleedingSymbol(bleeding: BleedingType): string {
+  getBleedingSymbol(bleeding: BleedingType): string {
     switch (bleeding) {
       case BleedingType.VERY_LIGHT: return 'VL';
       case BleedingType.LIGHT: return 'L';
@@ -433,10 +506,31 @@ export class FertilityDataService {
       const stored = localStorage.getItem(this.storageKey);
       if (stored) {
         const records = JSON.parse(stored);
+        
+        // Migrate any records with 'stretchy' consistency to use NOTHING instead
+        this.migrateStretchyConsistency(records);
+        
         this.recordsSubject.next(records);
       }
     } catch (error) {
-      console.error('Error loading records:', error);
+      // Error handling without console.log
+    }
+  }
+  
+  private migrateStretchyConsistency(records: DayRecord[]): void {
+    for (const dayRecord of records) {
+      for (const record of dayRecord.records) {
+        // If consistency is 'stretchy', change it to MucusConsistency.NOTHING
+        // Using string comparison for backward compatibility with stored data
+        if (String(record.mucusCharacteristics.consistency) === 'stretchy') {
+          record.mucusCharacteristics.consistency = MucusConsistency.NOTHING;
+        }
+        
+        // Migrate any records with 'cloudy-white' color to use 'white' instead
+        if (String(record.mucusCharacteristics.color) === 'cloudy-white') {
+          record.mucusCharacteristics.color = MucusColor.WHITE;
+        }
+      }
     }
   }
 
@@ -444,7 +538,7 @@ export class FertilityDataService {
     try {
       localStorage.setItem(this.storageKey, JSON.stringify(records));
     } catch (error) {
-      console.error('Error saving records:', error);
+      // Error handling without console.log
     }
   }
 }
