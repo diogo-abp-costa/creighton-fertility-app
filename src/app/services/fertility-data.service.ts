@@ -1,32 +1,33 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import {Injectable} from '@angular/core';
 import {
-  FertilityRecord,
-  DayRecord,
-  MucusType,
-  SensationType,
-  BleedingType,
-  StretchabilityType,
-  FrequencyType,
-  MucusColor,
-  MucusConsistency
+  FertilityRecord
 } from '../models/fertility-record.model';
+import {BleedingType} from "../models/bleeding.model";
+import {
+  Mucus,
+  MucusColor,
+  MucusConsistency,
+  MucusType
+} from "../models/mucus.model";
+import {DayRecord} from "../models/day-record.model";
+import {getMucusCode, getMucusColorCode, getMucusConsistencyCode, MucusPriority} from "../utils/mucus.util";
+import {FrequencyType} from "../models/frequency.model";
+import {BleedingPriority, getBleedingTypeCode} from "../utils/bleeding.util";
+import {getFrequencyCode} from "../utils/frequency.util";
+import {StorageService} from "./storage.service";
+import {Stamp} from "../models/stamp.model";
+import {STAMPS} from "../utils/stamp.util";
 
 @Injectable({
   providedIn: 'root'
 })
 export class FertilityDataService {
-  private readonly storageKey = 'fertility-records';
-  private recordsSubject = new BehaviorSubject<DayRecord[]>([]);
 
-  records$ = this.recordsSubject.asObservable();
-
-  constructor() {
-    this.loadRecords();
+  constructor(private storageService: StorageService) {
   }
 
   addRecord(record: FertilityRecord): void {
-    const records = this.recordsSubject.value;
+    const records = this.storageService.getRecords().value;
     const dateKey = record.date;
 
     let dayRecord = records.find(r => r.date === dateKey);
@@ -35,9 +36,7 @@ export class FertilityDataService {
       dayRecord = {
         date: dateKey,
         records: [],
-        chartSymbol: '',
-        chartColor: '',
-        baby: false
+        stamp: STAMPS["BLEEDING_DAY"]
       };
       records.push(dayRecord);
     }
@@ -50,17 +49,17 @@ export class FertilityDataService {
 
     records.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-    this.recordsSubject.next(records);
-    this.saveRecords(records);
+    this.storageService.getRecords().next(records);
+    this.storageService.saveRecords(records);
   }
 
   getRecordsByDate(date: string): FertilityRecord[] {
-    const dayRecord = this.recordsSubject.value.find(r => r.date === date);
+    const dayRecord = this.storageService.getRecords().value.find(r => r.date === date);
     return dayRecord ? dayRecord.records : [];
   }
 
   deleteRecord(recordId: string): void {
-    const records = this.recordsSubject.value;
+    const records = this.storageService.getRecords().value;
 
     for (const dayRecord of records) {
       const index = dayRecord.records.findIndex(r => r.id === recordId);
@@ -78,93 +77,8 @@ export class FertilityDataService {
     }
 
     this.updatePeakDayCalculations(records);
-    this.recordsSubject.next(records);
-    this.saveRecords(records);
-  }
-  
-  getCreightonSymbols(record: FertilityRecord): string {
-    return this.generateCreightonSymbols(record);
-  }
-  
-  getMucusCode(record: FertilityRecord): string {
-    const mucus = record.mucusCharacteristics;
-
-    if (mucus.type === MucusType.DRY || mucus.type === MucusType.NOTHING) {
-      return '0';
-    }
-
-    let baseSymbol = '';
-    switch (mucus.stretchability) {
-      case StretchabilityType.NONE:
-        if (mucus.sensation === SensationType.MOIST) {
-          baseSymbol = '2';
-        } else if (mucus.sensation === SensationType.WET) {
-          baseSymbol = '2W';
-        } else if (mucus.sensation === SensationType.SLIPPERY) {
-          baseSymbol = '4';
-        } else {
-          baseSymbol = '2';
-        }
-        break;
-      case StretchabilityType.LOW:
-        baseSymbol = '6';
-        break;
-      case StretchabilityType.MEDIUM:
-        baseSymbol = '8';
-        break;
-      case StretchabilityType.HIGH:
-        baseSymbol = '10';
-        break;
-    }
-
-    let modifiers = '';
-    if (mucus.stretchability !== StretchabilityType.NONE) {
-      switch (mucus.color) {
-        case MucusColor.BROWN:
-          modifiers += 'B';  // Castanho (ou negro)
-          break;
-        case MucusColor.WHITE:
-          modifiers += 'C';  // Opaco (branco)
-          break;
-        case MucusColor.CLEAR:
-          modifiers += 'K';  // Transparente
-          break;
-        case MucusColor.CLOUDY_CLEAR:
-          modifiers += 'C/K';  // Opaco e transparente
-          break;
-        case MucusColor.YELLOW:
-          modifiers += 'Y';  // Amarelo (ou amarelo claro)
-          break;
-      }
-
-      switch (mucus.consistency) {
-        case MucusConsistency.GUMMY:
-          modifiers += 'G';
-          break;
-        case MucusConsistency.PASTY:
-          modifiers += 'P';
-          break;
-      }
-
-      if (mucus.lubrication) {
-        modifiers += 'L';
-      }
-    }
-
-    if (mucus.stretchability === StretchabilityType.HIGH && mucus.lubrication) {
-      if (mucus.sensation === SensationType.MOIST) {
-        baseSymbol = '10DL';
-        modifiers = ''; // Clear all modifiers for special lubrication codes
-      } else if (mucus.sensation === SensationType.SLIPPERY) {
-        baseSymbol = '10SL';
-        modifiers = ''; // Clear all modifiers for special lubrication codes
-      } else if (mucus.sensation === SensationType.WET) {
-        baseSymbol = '10WL';
-        modifiers = ''; // Clear all modifiers for special lubrication codes
-      }
-    }
-
-    return baseSymbol + modifiers;
+    this.storageService.getRecords().next(records);
+    this.storageService.saveRecords(records);
   }
 
   private updateDayRecord(dayRecord: DayRecord): void {
@@ -176,13 +90,8 @@ export class FertilityDataService {
     // Calculate frequency for the most significant record type
     this.calculateFrequencyForMostSignificant(dayRecord, mostSignificant);
 
-    const chartInfo = this.getChartInfo(mostSignificant);
-    dayRecord.chartSymbol = chartInfo.symbol;
-    dayRecord.chartColor = chartInfo.color;
-    dayRecord.baby = chartInfo.baby;
-
-    // Store Creighton symbols separately from user notes
-    // We don't modify the original notes entered by the user
+    const stamp = this.getStampInfo(mostSignificant);
+    dayRecord.stamp = stamp;
   }
 
   private calculateFrequencyForMostSignificant(dayRecord: DayRecord, mostSignificant: FertilityRecord): void {
@@ -203,20 +112,19 @@ export class FertilityDataService {
     }
 
     // Update frequency only for the most significant record
-    mostSignificant.mucusCharacteristics.frequency = frequency;
+    mostSignificant.frequency = frequency;
   }
 
   private recordsAreEquivalent(record1: FertilityRecord, record2: FertilityRecord): boolean {
     // Compare the significant characteristics that determine fertility level
-    const mucus1 = record1.mucusCharacteristics;
-    const mucus2 = record2.mucusCharacteristics;
+    const bleeding1 = record1.bleeding;
+    const bleeding2 = record2.bleeding;
+    const mucus1 = record1.mucus;
+    const mucus2 = record2.mucus;
 
     return (
-        record1.bleeding === record2.bleeding &&
+        bleeding1.type === bleeding2.type &&
         mucus1.type === mucus2.type &&
-        mucus1.sensation === mucus2.sensation &&
-        mucus1.stretchability === mucus2.stretchability &&
-        mucus1.lubrication === mucus2.lubrication &&
         mucus1.color === mucus2.color &&
         mucus1.consistency === mucus2.consistency
     );
@@ -225,13 +133,10 @@ export class FertilityDataService {
   private updatePeakDayCalculations(records: DayRecord[]): void {
     // Reset all peak day markers
     records.forEach(record => {
-      record.peakDay = false;
-      record.postPeakDay = undefined;
       // Reset colors to default
       if (record.selectedRecord) {
-        const chartInfo = this.getChartInfo(record.selectedRecord);
-        record.chartColor = chartInfo.color;
-        record.baby = chartInfo.baby;
+        const stamp = this.getStampInfo(record.selectedRecord);
+        record.stamp = stamp;
       }
     });
 
@@ -241,21 +146,12 @@ export class FertilityDataService {
     for (let i = 0; i < sortedRecords.length; i++) {
       const current = sortedRecords[i];
       if (this.isPeakDay(current, sortedRecords, i)) {
-        current.peakDay = true;
+        current.stamp = STAMPS["PEAK_DAY"];
 
-        // Mark next 3 days as post-peak fertile days
+        // Mark the next 3 days as post-peak fertile days
         for (let j = 1; j <= 3 && i + j < sortedRecords.length; j++) {
           const postPeakRecord = sortedRecords[i + j];
-          postPeakRecord.postPeakDay = j;
-
-          // Update color for post-peak days (Green with baby for dry but fertile days)
-          if (postPeakRecord.selectedRecord &&
-              (postPeakRecord.selectedRecord.mucusCharacteristics.type === MucusType.DRY ||
-                  postPeakRecord.selectedRecord.mucusCharacteristics.type === MucusType.NOTHING) &&
-              postPeakRecord.selectedRecord.bleeding === BleedingType.NONE) {
-            postPeakRecord.chartColor = '#28a745'; // Green for dry but fertile days
-            postPeakRecord.baby = true;
-          }
+          postPeakRecord.stamp = STAMPS[`PEAK_DAY_PLUS_${j}`];
         }
       }
     }
@@ -265,19 +161,29 @@ export class FertilityDataService {
     if (!dayRecord.selectedRecord) return false;
 
     const record = dayRecord.selectedRecord;
-    const mucusType = record.mucusCharacteristics.type;
+    const mucusType = record.mucus.type;
+    const mucusColor = record.mucus.color
+    const mucusConsistency = record.mucus.consistency;
 
     // Peak day criteria: last day of most fertile mucus before change to less fertile
-    if (mucusType === MucusType.EGG_WHITE ||
-        (mucusType === MucusType.CREAMY && record.mucusCharacteristics.sensation === SensationType.SLIPPERY)) {
+    if ((mucusType === MucusType.LOW_STRETCH ||
+        mucusType === MucusType.MEDIUM_STRETCH ||
+        mucusType === MucusType.HIGH_STRETCH) ||
+        mucusType === MucusType.WET_WITH_LUBRICATION ||
+        mucusType === MucusType.MOIST_WITH_LUBRICATION ||
+        mucusType === MucusType.SHINY_WITH_LUBRICATION ||
+        mucusColor === MucusColor.CLEAR ||
+        mucusConsistency === MucusConsistency.GUMMY) {
 
       // Check if next day is less fertile
+      const currentMucusIndex = MucusPriority.indexOf(mucusType);
       if (index + 1 < allRecords.length) {
         const nextDay = allRecords[index + 1];
         if (nextDay.selectedRecord) {
-          const nextMucusType = nextDay.selectedRecord.mucusCharacteristics.type;
-          if (nextMucusType === MucusType.DRY || nextMucusType === MucusType.NOTHING ||
-              nextMucusType === MucusType.TACKY || nextMucusType === MucusType.STICKY) {
+          const nextMucusType = nextDay.selectedRecord.mucus.type;
+          const nextMucusIndex = MucusPriority.indexOf(nextMucusType);
+
+          if (nextMucusIndex < currentMucusIndex) {
             return true;
           }
         }
@@ -287,258 +193,99 @@ export class FertilityDataService {
     return false;
   }
 
-  private generateCreightonSymbols(record: FertilityRecord): string {
-    const symbols: string[] = [];
-
-    // Bleeding symbols
-    if (record.bleeding !== BleedingType.NONE) {
-      switch (record.bleeding) {
-        case BleedingType.VERY_LIGHT:
-          symbols.push('VL');
-          break;
-        case BleedingType.LIGHT:
-          symbols.push('L');
-          break;
-        case BleedingType.MODERATE:
-          symbols.push('M');
-          break;
-        case BleedingType.HEAVY:
-          symbols.push('H');
-          break;
-        case BleedingType.BROWN:
-          symbols.push('B');
-          break;
-      }
-    } else {
-      // Mucus symbols
-      const mucus = record.mucusCharacteristics;
-
-      if (mucus.type === MucusType.DRY || mucus.type === MucusType.NOTHING) {
-        symbols.push('0');
-      } else {
-        // Stretchability numbers
-        let baseSymbol = '';
-        switch (mucus.stretchability) {
-          case StretchabilityType.NONE:
-            if (mucus.sensation === SensationType.MOIST) {
-              baseSymbol = '2';
-            } else if (mucus.sensation === SensationType.WET) {
-              baseSymbol = '2W';
-            } else if (mucus.sensation === SensationType.SLIPPERY) {
-              baseSymbol = '4';
-            } else {
-              baseSymbol = '2';
-            }
-            break;
-          case StretchabilityType.LOW:
-            baseSymbol = '6';
-            break;
-          case StretchabilityType.MEDIUM:
-            baseSymbol = '8';
-            break;
-          case StretchabilityType.HIGH:
-            baseSymbol = '10';
-            break;
-        }
-
-        // Add color/consistency modifiers
-        let modifiers = '';
-        if (mucus.stretchability !== StretchabilityType.NONE) {
-          switch (mucus.color) {
-            case MucusColor.BROWN:
-              modifiers += 'B';  // Castanho (ou negro)
-              break;
-            case MucusColor.WHITE:
-              modifiers += 'C';  // Opaco (branco)
-              break;
-            case MucusColor.CLEAR:
-              modifiers += 'K';  // Transparente
-              break;
-            case MucusColor.CLOUDY_CLEAR:
-              modifiers += 'C/K';  // Opaco e transparente
-              break;
-            case MucusColor.YELLOW:
-              modifiers += 'Y';  // Amarelo (ou amarelo claro)
-              break;
-          }
-
-          switch (mucus.consistency) {
-            case MucusConsistency.GUMMY:
-              modifiers += 'G';
-              break;
-            case MucusConsistency.PASTY:
-              modifiers += 'P';
-              break;
-          }
-
-          if (mucus.lubrication) {
-            modifiers += 'L';
-          }
-        }
-
-        // Special cases for lubrication with high stretchability
-        if (mucus.stretchability === StretchabilityType.HIGH && mucus.lubrication) {
-          if (mucus.sensation === SensationType.MOIST) {
-            baseSymbol = '10DL';
-            modifiers = ''; // Clear all modifiers for special lubrication codes
-          } else if (mucus.sensation === SensationType.SLIPPERY) {
-            baseSymbol = '10SL';
-            modifiers = ''; // Clear all modifiers for special lubrication codes
-          } else if (mucus.sensation === SensationType.WET) {
-            baseSymbol = '10WL';
-            modifiers = ''; // Clear all modifiers for special lubrication codes
-          }
-        }
-
-        symbols.push(baseSymbol + modifiers);
-      }
-    }
-
-    // Add frequency
-    switch (record.mucusCharacteristics.frequency) {
-      case FrequencyType.ONCE:
-        symbols.push('X1');
-        break;
-      case FrequencyType.TWICE:
-        symbols.push('X2');
-        break;
-      case FrequencyType.THREE:
-        symbols.push('X3');
-        break;
-      case FrequencyType.ALL_DAY:
-        symbols.push('AD');
-        break;
-    }
-
-    return symbols.join(' ');
-  }
-
   private getMostSignificantRecord(records: FertilityRecord[]): FertilityRecord {
-    const mucusPriority = [
-      MucusType.DRY,
-      MucusType.NOTHING,
-      MucusType.TACKY,
-      MucusType.STICKY,
-      MucusType.CREAMY,
-      MucusType.EGG_WHITE
-    ];
-
-    const sensationPriority = [
-      SensationType.DRY,
-      SensationType.MOIST,
-      SensationType.WET,
-      SensationType.SLIPPERY
-    ];
-
     return records.reduce((most, current) => {
-      if (current.bleeding !== BleedingType.NONE && most.bleeding === BleedingType.NONE) {
-        return current;
-      }
-
-      if (most.bleeding !== BleedingType.NONE && current.bleeding === BleedingType.NONE) {
-        return most;
-      }
-
-      const currentMucusIndex = mucusPriority.indexOf(current.mucusCharacteristics.type);
-      const mostMucusIndex = mucusPriority.indexOf(most.mucusCharacteristics.type);
+      const currentBleedingIndex = BleedingPriority.indexOf(current.bleeding.type);
+      const mostBleedingIndex = BleedingPriority.indexOf(most.bleeding.type);
+      const currentMucusIndex = MucusPriority.indexOf(current.mucus.type);
+      const mostMucusIndex = MucusPriority.indexOf(most.mucus.type);
 
       if (currentMucusIndex > mostMucusIndex) {
         return current;
       } else if (currentMucusIndex < mostMucusIndex) {
         return most;
       }
-
-      const currentSensationIndex = sensationPriority.indexOf(current.mucusCharacteristics.sensation);
-      const mostSensationIndex = sensationPriority.indexOf(most.mucusCharacteristics.sensation);
-
-      if (currentSensationIndex > mostSensationIndex) {
-        return current;
+      else {
+        if (currentBleedingIndex > mostBleedingIndex) {
+          return current;
+        }
+        else {
+          return most;
+        }
       }
-
-      return most;
     });
   }
 
-  private getChartInfo(record: FertilityRecord): { symbol: string; color: string; baby: boolean } {
+  private getStampInfo(record: FertilityRecord): Stamp {
     // Handle bleeding - always red
-    if (record.bleeding !== BleedingType.NONE) {
-      return {
-        symbol: this.getBleedingSymbol(record.bleeding),
-        color: '#dc3545', // Red for days with menstrual flow
-        baby: false
-      };
+    if (record.bleeding.type !== BleedingType.NONE) {
+      var bleeding_day = STAMPS["BLEEDING_DAY"];
+      bleeding_day.symbol = this.getBleedingSymbol(record.bleeding.type) || '';
+      return bleeding_day;
     }
 
     // Handle mucus characteristics
-    switch (record.mucusCharacteristics.type) {
+    switch (record.mucus.type) {
       case MucusType.DRY:
-      case MucusType.NOTHING:
-        return { symbol: '0', color: '#28a745', baby: true }; // Green for infertile dry days
+        var dry_day = STAMPS["DRY_DAY"];
+        dry_day.symbol = this.getMucusSymbols(record.mucus) || '';
+        return dry_day;
 
-      case MucusType.TACKY:
-      case MucusType.STICKY:
-      case MucusType.CREAMY:
-      case MucusType.EGG_WHITE:
-        return { symbol: 'M', color: '#ffffff', baby: true }; // White with baby for days with mucus
-
-      default:
-        return { symbol: '?', color: '#6c757d', baby: true };
+      case MucusType.MOIST_NO_LUBRICATION:
+      case MucusType.WET_NO_LUBRICATION:
+      case MucusType.SHINY_NO_LUBRICATION:
+      case MucusType.LOW_STRETCH:
+      case MucusType.MEDIUM_STRETCH:
+      case MucusType.HIGH_STRETCH:
+      case MucusType.MOIST_WITH_LUBRICATION:
+      case MucusType.WET_WITH_LUBRICATION:
+      case MucusType.SHINY_WITH_LUBRICATION:
+        var mucus_day = STAMPS["MUCUS_DAY"];
+        mucus_day.symbol = this.getMucusSymbols(record.mucus) || '';
+        return mucus_day;
     }
   }
 
   getBleedingSymbol(bleeding: BleedingType): string {
-    switch (bleeding) {
-      case BleedingType.VERY_LIGHT: return 'VL';
-      case BleedingType.LIGHT: return 'L';
-      case BleedingType.MODERATE: return 'M';
-      case BleedingType.HEAVY: return 'H';
-      case BleedingType.BROWN: return 'B';
-      default: return '';
+    return getBleedingTypeCode(bleeding) || '';
+  }
+
+  getMucusSymbols(mucus: Mucus) {
+    let baseSymbol = getMucusCode(mucus.type);
+    let modifiers = '';
+
+    if(mucus.color !== MucusColor.NONE) {
+      modifiers += getMucusColorCode(mucus.color)
     }
+
+    if(mucus.consistency !== MucusConsistency.NONE) {
+      modifiers += getMucusConsistencyCode(mucus.consistency)
+    }
+    return baseSymbol + modifiers;
+  }
+
+  getCreightonSymbols(record: FertilityRecord): string {
+    return this.generateCreightonSymbols(record);
+  }
+
+  private generateCreightonSymbols(record: FertilityRecord): string {
+    const symbols: string[] = [];
+
+    // Bleeding symbols
+    if (record.bleeding.type !== BleedingType.NONE) {
+      symbols.push(this.getBleedingSymbol(record.bleeding.type) || '');
+    }
+
+    // Mucus symbols
+    symbols.push(this.getMucusSymbols(record.mucus));
+
+    // Frequency symbols
+    symbols.push(getFrequencyCode(record.frequency) || '');
+
+    return symbols.join(' ');
   }
 
   private generateId(): string {
     return Date.now().toString() + Math.random().toString(36).substr(2, 9);
-  }
-
-  private loadRecords(): void {
-    try {
-      const stored = localStorage.getItem(this.storageKey);
-      if (stored) {
-        const records = JSON.parse(stored);
-        
-        // Migrate any records with 'stretchy' consistency to use NOTHING instead
-        this.migrateStretchyConsistency(records);
-        
-        this.recordsSubject.next(records);
-      }
-    } catch (error) {
-      // Error handling without console.log
-    }
-  }
-  
-  private migrateStretchyConsistency(records: DayRecord[]): void {
-    for (const dayRecord of records) {
-      for (const record of dayRecord.records) {
-        // If consistency is 'stretchy', change it to MucusConsistency.NOTHING
-        // Using string comparison for backward compatibility with stored data
-        if (String(record.mucusCharacteristics.consistency) === 'stretchy') {
-          record.mucusCharacteristics.consistency = MucusConsistency.NOTHING;
-        }
-        
-        // Migrate any records with 'cloudy-white' color to use 'white' instead
-        if (String(record.mucusCharacteristics.color) === 'cloudy-white') {
-          record.mucusCharacteristics.color = MucusColor.WHITE;
-        }
-      }
-    }
-  }
-
-  private saveRecords(records: DayRecord[]): void {
-    try {
-      localStorage.setItem(this.storageKey, JSON.stringify(records));
-    } catch (error) {
-      // Error handling without console.log
-    }
   }
 }

@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { Observable } from 'rxjs';
-import { DayRecord } from '../../models/fertility-record.model';
 import { FertilityDataService } from '../../services/fertility-data.service';
+import {DayRecord} from "../../models/day-record.model";
+import {StorageService} from "../../services/storage.service";
 
 @Component({
   selector: 'app-fertility-chart',
@@ -12,8 +13,9 @@ export class FertilityChartComponent implements OnInit {
   records$: Observable<DayRecord[]>;
   currentMonth = new Date();
 
-  constructor(private fertilityService: FertilityDataService) {
-    this.records$ = this.fertilityService.records$;
+  constructor(private storageService: StorageService,
+              private fertilityService: FertilityDataService) {
+    this.records$ = this.storageService.records$;
   }
 
   ngOnInit(): void {}
@@ -63,14 +65,6 @@ export class FertilityChartComponent implements OnInit {
     return records.find(record => record.date === date);
   }
 
-  getTextColor(backgroundColor: string): string {
-// Return appropriate text color based on background
-    if (backgroundColor === '#ffffff') {
-      return '#000000'; // Black text on white background
-    }
-    return '#ffffff'; // White text on colored backgrounds
-  }
-
   getCreightonCodes(dayRecord: DayRecord): string {
     if (!dayRecord.selectedRecord) {
       return '';
@@ -101,7 +95,7 @@ export class FertilityChartComponent implements OnInit {
 
     // Check for sexual contact indicator
     const hasIntercourse = dayRecord.records.some(record =>
-        record.hasIntercourse
+        record.intercourse
     );
 
     // Format the final notes string

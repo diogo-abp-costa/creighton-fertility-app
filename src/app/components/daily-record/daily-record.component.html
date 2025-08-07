@@ -2,7 +2,7 @@
   <h2>Registos Diários</h2>
 
   <div class="date-selector">
-    <label for="selectedDate">Seleccionar Data:</label>
+    <label for="selectedDate">Selecionar Data:</label>
     <input
         type="date"
         id="selectedDate"
@@ -23,7 +23,7 @@
       <div *ngFor="let record of selectedDayRecords; trackBy: trackByRecordId"
            class="record-card">
         <div class="record-header">
-          <span class="record-time">{{ formatTime(record.time) }}</span>
+          <span class="record-time">Hora: {{ formatTime(record.time) }}</span>
           <button
               class="btn btn-danger btn-sm"
               (click)="deleteRecord(record.id)"
@@ -34,17 +34,17 @@
 
         <div class="record-details">
           <div class="detail-group">
-            <label>Características do Muco:</label>
+            <label>Muco:</label>
             <span>{{ getMucusDescription(record) }}</span>
           </div>
 
           <div class="detail-group">
-            <label>Hemorragia:</label>
+            <label>Fluxo menstrual:</label>
             <span>{{ getBleedingDescription(record) }}</span>
           </div>
 
           <div class="detail-group">
-            <label>Códigos Creighton:</label>
+            <label>Código:</label>
             <span class="creighton-symbols">{{ getCreightonSymbols(record) }}</span>
           </div>
 

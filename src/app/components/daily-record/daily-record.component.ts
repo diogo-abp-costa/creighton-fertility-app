@@ -1,8 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { Observable } from 'rxjs';
-import { DayRecord, FertilityRecord, BleedingType } from '../../models/fertility-record.model';
+import { FertilityRecord } from '../../models/fertility-record.model';
 import { FertilityDataService } from '../../services/fertility-data.service';
 import { NotificationService } from '../../services/notification.service';
+import {DayRecord} from "../../models/day-record.model";
+import {getMucusColorText, getMucusConsistencyText, getMucusTypeText} from "../../utils/mucus.util";
+import {getBleedingTypeText} from "../../utils/bleeding.util";
+import {StorageService} from "../../services/storage.service";
 
 @Component({
   selector: 'app-daily-record',
@@ -15,10 +19,11 @@ export class DailyRecordComponent implements OnInit {
   selectedDayRecords: FertilityRecord[] = [];
 
   constructor(
+      private storageService: StorageService,
       private fertilityService: FertilityDataService,
       private notificationService: NotificationService
   ) {
-    this.records$ = this.fertilityService.records$;
+    this.records$ = this.storageService.records$;
   }
 
   ngOnInit(): void {
@@ -55,24 +60,21 @@ export class DailyRecordComponent implements OnInit {
   }
 
   getMucusDescription(record: FertilityRecord): string {
-    const { type, color, consistency, sensation, stretchability, lubrication } = record.mucusCharacteristics;
+    const { type, color, consistency } = record.mucus;
 
-    const typeDesc = this.formatMucusType(type);
-    const colorDesc = this.formatMucusColor(color);
-    const consistencyDesc = this.formatMucusConsistency(consistency);
-    const sensationDesc = this.formatSensation(sensation);
-    const stretchabilityDesc = this.formatStretchability(stretchability);
-    const lubricationDesc = lubrication ? 'Com lubrificação' : 'Sem lubrificação';
+    const typeDesc = getMucusTypeText(type);
+    const colorDesc = getMucusColorText(color);
+    const consistencyDesc = getMucusConsistencyText(consistency);
 
-    const code = this.fertilityService.getMucusCode(record);
+    const descriptionParts = [typeDesc, colorDesc, consistencyDesc].filter(Boolean);
+    const descriptionText = descriptionParts.join(' - ');
 
-    return `${typeDesc} - ${colorDesc} - ${consistencyDesc} - ${sensationDesc} - ${stretchabilityDesc} - ${lubricationDesc} [${code}]`;
+    return `${descriptionText}`;
   }
 
   getBleedingDescription(record: FertilityRecord): string {
-    const description = record.bleeding === 'none' ? 'Sem hemorragia' : this.formatBleeding(record.bleeding);
-    const code = this.fertilityService.getBleedingSymbol(record.bleeding);
-    return code ? `${description} [${code}]` : description;
+    const descriptionText = getBleedingTypeText(record.bleeding.type);
+    return `${descriptionText}`;
   }
 
   getCreightonSymbols(record: FertilityRecord): string {
@@ -93,70 +95,6 @@ export class DailyRecordComponent implements OnInit {
     }
 
     return record.notes;
-  }
-
-  private formatMucusType(value: string): string {
-    const translations: { [key: string]: string } = {
-      'dry': 'Seco',
-      'nothing': 'Nada',
-      'tacky': 'Pegajoso',
-      'sticky': 'Aderente',
-      'creamy': 'Cremoso',
-      'eggwhite': 'Clara de Ovo'
-    };
-    return translations[value] || value;
-  }
-
-  private formatMucusColor(value: string): string {
-    const translations: { [key: string]: string } = {
-      'clear': 'Transparente (K)',
-      'white': 'Opaco (branco) (C)',
-      'cloudy-clear': 'Opaco e transparente (C/K)',
-      'yellow': 'Amarelo (ou amarelo claro) (Y)',
-      'brown': 'Castanho (ou negro) (B)'
-    };
-    return translations[value] || value;
-  }
-
-  private formatMucusConsistency(value: string): string {
-    const translations: { [key: string]: string } = {
-      'nothing': 'Nenhuma',
-      'pasty': 'Pastoso',
-      'gummy': 'Goma'
-    };
-    return translations[value] || value;
-  }
-
-  private formatSensation(value: string): string {
-    const translations: { [key: string]: string } = {
-      'dry': 'Seco',
-      'moist': 'Húmido',
-      'wet': 'Molhado',
-      'slippery': 'Brilhante/Escorregadio'
-    };
-    return translations[value] || value;
-  }
-
-  private formatStretchability(value: string): string {
-    const translations: { [key: string]: string } = {
-      'none': 'Nenhuma',
-      'low': 'Pequena (6)',
-      'medium': 'Média (8)',
-      'high': 'Alta (10)'
-    };
-    return translations[value] || value;
-  }
-
-  private formatBleeding(value: string): string {
-    const translations: { [key: string]: string } = {
-      'none': 'Sem hemorragia',
-      'very-light': 'Muito ligeira',
-      'light': 'Ligeira',
-      'moderate': 'Moderada',
-      'heavy': 'Abundante',
-      'brown': 'Castanho/Preto'
-    };
-    return translations[value] || value;
   }
 
   trackByRecordId(index: number, record: FertilityRecord): string {

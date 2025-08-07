@@ -50,8 +50,4 @@ export class NotificationComponent implements OnInit, OnDestroy {
         return '';
     }
   }
-
-  trackByNotificationId(index: number, notification: NotificationMessage): string {
-    return notification.id;
-  }
 }

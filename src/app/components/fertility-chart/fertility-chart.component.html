@@ -30,8 +30,8 @@
     <div class="calendar-grid">
       <div class="calendar-header">
         <div class="day-header">Data</div>
-        <div class="day-header">Cor</div>
-        <div class="day-header">Códigos</div>
+        <div class="day-header">Selo</div>
+        <div class="day-header">Símbolo</div>
         <div class="day-header">Notas</div>
       </div>
 
@@ -42,11 +42,11 @@
 
         <ng-container *ngIf="getRecordForDate(getCurrentMonthRecords(records), day) as dayRecord; else emptyDay">
           <div class="color-cell"
-               [style.background-color]="dayRecord.chartColor"
-               [style.border]="dayRecord.chartColor === '#ffffff' ? '2px solid #666' : 'none'">
-            <span *ngIf="dayRecord.baby" class="baby-symbol">👶</span>
-            <span *ngIf="dayRecord.peakDay" class="peak-indicator">P</span>
-            <span *ngIf="dayRecord.postPeakDay" class="post-peak-indicator">{{ dayRecord.postPeakDay }}</span>
+               [style.background-color]="dayRecord.stamp.color"
+               [style.border]="dayRecord.stamp.color === '#ffffff' ? '2px solid #666' : 'none'">
+            <span *ngIf="dayRecord.stamp.baby" class="baby-symbol">👶</span>
+            <span *ngIf="dayRecord.stamp.isPeakDay" class="peak-indicator">P</span>
+            <span *ngIf="dayRecord.stamp.postPeakDay" class="post-peak-indicator">{{ dayRecord.stamp.postPeakDay }}</span>
           </div>
           <div class="codes-cell">
             {{ getCreightonCodes(dayRecord) }}
