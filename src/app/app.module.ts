@@ -9,6 +9,8 @@ import { FertilityChartComponent } from './components/fertility-chart/fertility-
 import { DailyRecordComponent } from './components/daily-record/daily-record.component';
 import { NotificationComponent } from './components/notification/notification.component';
 import {HttpClientModule} from "@angular/common/http";
+import { registerLocaleData } from '@angular/common';
+import localePt from '@angular/common/locales/pt';
 
 @NgModule({
   declarations: [
@@ -29,3 +31,9 @@ import {HttpClientModule} from "@angular/common/http";
   bootstrap: [AppComponent]
 })
 export class AppModule { }
+
+// Registra os dados de localização para português
+registerLocaleData(localePt, 'pt');
+
+// (Opcional) caso queira garantir, pode usar também 'pt-PT'
+registerLocaleData(localePt, 'pt-PT');

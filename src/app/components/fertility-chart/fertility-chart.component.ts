@@ -3,6 +3,7 @@ import { Observable } from 'rxjs';
 import { FertilityDataService } from '../../services/fertility-data.service';
 import {DayRecord} from "../../models/day-record.model";
 import {StorageService} from "../../services/storage.service";
+import { formatDate } from '@angular/common';
 
 @Component({
   selector: 'app-fertility-chart',
@@ -121,9 +122,9 @@ export class FertilityChartComponent implements OnInit {
     const days: string[] = [];
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month, day);
-      days.push(date.toISOString().split('T')[0]);
+      const isoLocal = formatDate(date, "yyyy-MM-dd'T'HH:mm:ssXXX", 'pt-PT');
+      days.push(isoLocal.split('T')[0]);
     }
-
     return days;
   }
 }

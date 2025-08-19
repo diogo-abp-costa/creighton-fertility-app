@@ -145,3 +145,10 @@ h2 {
     }
   }
 }
+
+.btn:disabled,
+button.btn:disabled {
+  background-color: #bdbdbd !important;
+  color: #ffffff !important;
+  cursor: not-allowed;
+}

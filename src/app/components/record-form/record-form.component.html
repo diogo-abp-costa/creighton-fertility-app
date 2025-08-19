@@ -42,7 +42,7 @@
 
     <div class="form-group" *ngIf="showMucusColor()">
       <label for="mucusColor">Cor do Muco:</label>
-      <select id="mucusColor" formControlName="mucusColor" required>
+      <select id="mucusColor" formControlName="mucusColor">
         <option *ngFor="let color of mucusColors" [value]="color">
           {{ getMucusColorText(color) }}
         </option>
@@ -51,7 +51,7 @@
 
     <div class="form-group" *ngIf="showMucusConsistency()">
       <label for="mucusConsistency">Consistência do Muco:</label>
-      <select id="mucusConsistency" formControlName="mucusConsistency" required>
+      <select id="mucusConsistency" formControlName="mucusConsistency">
         <option *ngFor="let consistency of mucusConsistencies" [value]="consistency">
           {{ getMucusConsistencyText(consistency) }}
         </option>
