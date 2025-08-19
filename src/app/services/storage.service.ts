@@ -1,31 +1,30 @@
 import {DayRecord} from "../models/day-record.model";
-import {BehaviorSubject} from "rxjs";
+import {BehaviorSubject, tap} from "rxjs";
 import {Injectable} from "@angular/core";
+import {HttpClient} from "@angular/common/http";
+import {NotificationService} from "./notification.service";
 
 @Injectable({
   providedIn: 'root'
 })
 export class StorageService {
-  private readonly storageKey = 'fertility-records';
+  private readonly apiUrl = 'http://corona-australis.duckdns.org:8081/fertility-app';
   private recordsSubject = new BehaviorSubject<DayRecord[]>([]);
 
   records$ = this.recordsSubject.asObservable();
 
-  constructor() {
+  constructor(private http: HttpClient,
+              private notificationService: NotificationService) {
     this.loadRecords();
   }
 
   private loadRecords(): void {
-    console.log('Loading records from local storage...');
-    try {
-      const stored = localStorage.getItem(this.storageKey);
-      if (stored) {
-        const records = JSON.parse(stored);
-        this.recordsSubject.next(records);
-      }
-    } catch (error) {
-      // Error handling without console.log
-    }
+    this.http.get<DayRecord[]>(this.apiUrl).subscribe(
+        (records) => this.recordsSubject.next(records),
+        (error) => {
+          console.error(error);
+        }
+    );
   }
 
   getRecords(): BehaviorSubject<DayRecord[]> {
@@ -33,10 +32,21 @@ export class StorageService {
   }
 
   saveRecords(records: DayRecord[]): void {
-    try {
-      localStorage.setItem(this.storageKey, JSON.stringify(records));
-    } catch (error) {
-      // Error handling without console.log
-    }
+    this.http.post<void>(this.apiUrl, records).subscribe({
+      next: () => {
+        // Atualize o estado interno se desejar
+        this.recordsSubject.next(records);
+      },
+      error: (error) => {
+        console.error(error);
+      }
+    });
+  }
+
+  deleteRecord(recordId: string) {
+    const deleteRecordUrl = `${this.apiUrl}/${recordId}`;
+    return this.http.delete(deleteRecordUrl).pipe(
+        tap(() => this.loadRecords())
+    );
   }
 }

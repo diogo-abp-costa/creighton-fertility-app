@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { Observable } from 'rxjs';
+import {map, Observable} from 'rxjs';
 import { FertilityRecord } from '../../models/fertility-record.model';
 import { FertilityDataService } from '../../services/fertility-data.service';
 import { NotificationService } from '../../services/notification.service';
@@ -16,7 +16,7 @@ import {StorageService} from "../../services/storage.service";
 export class DailyRecordComponent implements OnInit {
   records$: Observable<DayRecord[]>;
   selectedDate: string = '';
-  selectedDayRecords: FertilityRecord[] = [];
+  selectedDayRecords$!: Observable<FertilityRecord[]>;
 
   constructor(
       private storageService: StorageService,
@@ -28,26 +28,27 @@ export class DailyRecordComponent implements OnInit {
 
   ngOnInit(): void {
     this.selectedDate = new Date().toISOString().split('T')[0];
-    this.loadRecordsForDate();
+    this.selectedDayRecords$ = this.records$.pipe(
+        map(records => records.find(r => r.date === this.selectedDate)?.records || [])
+    );
   }
 
   onDateChange(): void {
-    this.loadRecordsForDate();
-  }
-
-  private loadRecordsForDate(): void {
-    this.selectedDayRecords = this.fertilityService.getRecordsByDate(this.selectedDate);
+    this.selectedDayRecords$ = this.records$.pipe(
+        map(records => records.find(r => r.date === this.selectedDate)?.records || [])
+    );
   }
 
   deleteRecord(recordId: string): void {
     if (confirm('Tem a certeza de que deseja eliminar este registo?')) {
-      try {
-        this.fertilityService.deleteRecord(recordId);
-        this.loadRecordsForDate();
-        this.notificationService.showSuccess('Registo eliminado com sucesso!');
-      } catch (error) {
-        this.notificationService.showError('Erro ao eliminar o registo. Tente novamente.');
-      }
+      this.fertilityService.deleteRecord(recordId).subscribe({
+        next: () => {
+          this.notificationService.showSuccess('Registo eliminado com sucesso!');
+        },
+        error: () => {
+          this.notificationService.showError('Erro ao eliminar o registo. Tente novamente.');
+        }
+      });
     }
   }
 

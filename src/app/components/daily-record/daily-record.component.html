@@ -11,6 +11,8 @@
         class="date-input">
   </div>
 
+  <div *ngIf="(selectedDayRecords$ | async) as selectedDayRecords">
+
   <div *ngIf="selectedDayRecords.length === 0" class="no-records">
     <p>Não foram encontrados registos para {{ selectedDate | date:'fullDate':'pt-PT' }}</p>
   </div>
@@ -20,7 +22,7 @@
     <p class="record-count">{{ selectedDayRecords.length }} registo(s) encontrado(s)</p>
 
     <div class="records-list">
-      <div *ngFor="let record of selectedDayRecords; trackBy: trackByRecordId"
+      <div *ngFor="let record of (selectedDayRecords$ | async); trackBy: trackByRecordId"
            class="record-card">
         <div class="record-header">
           <span class="record-time">Hora: {{ formatTime(record.time) }}</span>
@@ -56,4 +58,5 @@
       </div>
     </div>
   </div>
+</div>
 </div>

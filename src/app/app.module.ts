@@ -8,6 +8,7 @@ import { RecordFormComponent } from './components/record-form/record-form.compon
 import { FertilityChartComponent } from './components/fertility-chart/fertility-chart.component';
 import { DailyRecordComponent } from './components/daily-record/daily-record.component';
 import { NotificationComponent } from './components/notification/notification.component';
+import {HttpClientModule} from "@angular/common/http";
 
 @NgModule({
   declarations: [
@@ -21,7 +22,8 @@ import { NotificationComponent } from './components/notification/notification.co
     BrowserModule,
     BrowserAnimationsModule,
     ReactiveFormsModule,
-    FormsModule
+    FormsModule,
+    HttpClientModule
   ],
   providers: [],
   bootstrap: [AppComponent]

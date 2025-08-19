@@ -17,6 +17,8 @@ import {getFrequencyCode} from "../utils/frequency.util";
 import {StorageService} from "./storage.service";
 import {Stamp} from "../models/stamp.model";
 import {STAMPS} from "../utils/stamp.util";
+import ObjectID from "bson-objectid";
+import {NotificationService} from "./notification.service";
 
 @Injectable({
   providedIn: 'root'
@@ -31,9 +33,19 @@ export class FertilityDataService {
     const dateKey = record.date;
 
     let dayRecord = records.find(r => r.date === dateKey);
+    if (!dayRecord) {
+      dayRecord = {
+        id: new ObjectID(),
+        date: dateKey,
+        records: [],
+        stamp: STAMPS["BLEEDING_DAY"]
+      };
+      records.push(dayRecord);
+    }
 
     if (!dayRecord) {
       dayRecord = {
+        id: new ObjectID(),
         date: dateKey,
         records: [],
         stamp: STAMPS["BLEEDING_DAY"]
@@ -58,27 +70,8 @@ export class FertilityDataService {
     return dayRecord ? dayRecord.records : [];
   }
 
-  deleteRecord(recordId: string): void {
-    const records = this.storageService.getRecords().value;
-
-    for (const dayRecord of records) {
-      const index = dayRecord.records.findIndex(r => r.id === recordId);
-      if (index !== -1) {
-        dayRecord.records.splice(index, 1);
-
-        if (dayRecord.records.length === 0) {
-          const dayIndex = records.indexOf(dayRecord);
-          records.splice(dayIndex, 1);
-        } else {
-          this.updateDayRecord(dayRecord);
-        }
-        break;
-      }
-    }
-
-    this.updatePeakDayCalculations(records);
-    this.storageService.getRecords().next(records);
-    this.storageService.saveRecords(records);
+  deleteRecord(recordId: string) {
+    return this.storageService.deleteRecord(recordId);
   }
 
   private updateDayRecord(dayRecord: DayRecord): void {
@@ -286,6 +279,6 @@ export class FertilityDataService {
   }
 
   private generateId(): string {
-    return Date.now().toString() + Math.random().toString(36).substr(2, 9);
+    return new ObjectID().toHexString();
   }
 }
